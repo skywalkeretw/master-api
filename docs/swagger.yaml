@@ -1,0 +1,51 @@
+basePath: /
+consumes:
+- application/json
+info:
+  contact: {}
+  description: REST API for interacting with the platform
+  title: Name still to be choosen
+  version: 0.0.1
+paths:
+  /healthcheck:
+    get:
+      description: Perform a healthcheck
+      operationId: healthcheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Healthcheck
+  /liveness:
+    get:
+      description: Check if the service is live
+      operationId: liveness
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Live
+          schema:
+            type: string
+      summary: Liveness
+  /readiness:
+    get:
+      description: Check if the service is ready
+      operationId: readiness
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ready
+          schema:
+            type: string
+      summary: Readiness
+produces:
+- application/json
+swagger: "2.0"
+tags:
+- description: API v1 operations
+  name: v1

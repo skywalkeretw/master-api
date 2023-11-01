@@ -1,0 +1,78 @@
+{
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for interacting with the platform",
+        "title": "Name still to be choosen",
+        "contact": {},
+        "version": "0.0.1"
+    },
+    "basePath": "/",
+    "paths": {
+        "/healthcheck": {
+            "get": {
+                "description": "Perform a healthcheck",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Healthcheck",
+                "operationId": "healthcheck",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/liveness": {
+            "get": {
+                "description": "Check if the service is live",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Liveness",
+                "operationId": "liveness",
+                "responses": {
+                    "200": {
+                        "description": "Live",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/readiness": {
+            "get": {
+                "description": "Check if the service is ready",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Readiness",
+                "operationId": "readiness",
+                "responses": {
+                    "200": {
+                        "description": "Ready",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "description": "API v1 operations",
+            "name": "v1"
+        }
+    ]
+}
