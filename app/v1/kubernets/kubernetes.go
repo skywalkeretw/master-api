@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-var clientset *kubernetes.Clientset
+var clientset kubernetes.Interface
 
 func init() {
 	var kubeconfig string
@@ -74,19 +74,9 @@ func GetKubernetesDeployment(name, namespace string) (*appsv1.Deployment, error)
 
 // DeleteKubernetesDeployment deletes a specific deployment in the Kubernetes cluster.
 func DeleteKubernetesDeployment(name, namespace string) error {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return err
-	}
-
 	// Delete the deployment
 	deletePolicy := metav1.DeletePropagationForeground
-	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{
+	err := clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	})
 	if err != nil {
@@ -97,14 +87,13 @@ func DeleteKubernetesDeployment(name, namespace string) error {
 }
 
 // UpdateKubernetesDeployment updates a specific deployment in the Kubernetes cluster.
-func UpdateKubernetesDeployment(clientset *kubernetes.Clientset, name, namespace string) error {
+func UpdateKubernetesDeployment(name, namespace string, updateOptions metav1.UpdateOptions) error {
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Fetch the latest deployment object
-		deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		deployment, err := GetKubernetesDeployment(name, namespace)
 		if err != nil {
 			return err
 		}
-
 		// Modify the deployment as needed
 		//deployment.Spec.Replicas = int32Ptr(3) // For example, change the number of replicas
 
