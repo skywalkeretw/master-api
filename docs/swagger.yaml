@@ -1,12 +1,59 @@
 basePath: /
 consumes:
 - application/json
+definitions:
+  kubernets.DeploymentInfo:
+    properties:
+      name:
+        type: string
+      namespace:
+        type: string
+    type: object
+  kubernets.PodInfo:
+    properties:
+      name:
+        type: string
+      namespace:
+        type: string
+    type: object
 info:
   contact: {}
   description: REST API for interacting with the platform
   title: Name still to be choosen
   version: 0.0.1
 paths:
+  /api/v1/app:
+    get:
+      consumes:
+      - application/json
+      description: List all Kubernetes deployments in the cluster
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/kubernets.DeploymentInfo'
+            type: array
+      summary: List Kubernetes Deployments
+      tags:
+      - Deployments
+  /api/v1/pods:
+    get:
+      consumes:
+      - application/json
+      description: List all Kubernetes pods in the cluster
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/kubernets.PodInfo'
+            type: array
+      summary: List Kubernetes Pods
   /healthcheck:
     get:
       description: Perform a healthcheck
@@ -46,6 +93,3 @@ paths:
 produces:
 - application/json
 swagger: "2.0"
-tags:
-- description: API v1 operations
-  name: v1

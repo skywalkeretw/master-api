@@ -8,8 +8,6 @@ import "github.com/skywalkeretw/master-api/app"
 // @BasePath /
 // @accept json
 // @produce json
-// @tag.name v1
-// @tag.description API v1 operations
 
 func main() {
 	app.Start()
