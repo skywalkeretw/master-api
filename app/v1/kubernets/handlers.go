@@ -29,7 +29,10 @@ func PodHandler(ctx *gin.Context) {
 // @Success 200 {array} v1.Deployment
 // @Router /api/v1/app [get]
 func GetAllAppsHandler(ctx *gin.Context) {
-	d, _ := GetKubernetesDeployments("")
+	d, err := GetKubernetesDeployments("")
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+	}
 	ctx.JSON(http.StatusOK, d)
 }
 

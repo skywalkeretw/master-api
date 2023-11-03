@@ -1,9 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: api
+  namespace: default
   labels:
     app: api
+
 spec:
   replicas: 1
   selector:
@@ -14,6 +17,9 @@ spec:
       labels:
         app: api
     spec:
+      serviceAccountName: deployment-admin-sa
+      automountServiceAccountToken: true
+      serviceAccount: cluster-deployment-admin-role
       containers:
       - name: api
         image: api:v1
@@ -27,16 +33,143 @@ spec:
             cpu: "1000m"
         ports:
         - containerPort: 8080
+
 ---
+
 apiVersion: v1
 kind: Service
+
 metadata:
   name: api
+  namespace: default
 spec:
   type: NodePort
   ports:
   - name: http
-    nodePort: 30000
+    nodePort: 30951
     port: 8080
   selector:
     app: api
+
+---
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: Role
+# metadata:
+#   namespace: default
+#   name: deployment-admin-role
+# rules:
+# - apiGroups: ["coordination.k8s.io"]
+#   resources: ["leases"]
+#   verbs: ["*"] 
+
+# ---
+
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: deployment-admin-sa
+  namespace: default
+
+---
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: list-deployments
+# rules:
+# - apiGroups: ["apps"]
+#   resources: ["deployments"]
+#   verbs: ["list"]
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: deployment-admin-sa-cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: deployment-admin-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: deployment-admin-sa-binding
+subjects:
+- kind: ServiceAccount
+  name: deployment-admin-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: list-deployments
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: deployment-admin-role-binding
+#   namespace: default
+# subjects:
+# - kind: ServiceAccount
+#   name: deployment-admin-sa
+#   namespace: default
+# roleRef:
+#   kind: Role
+#   name: deployment-admin-role
+#   apiGroup: rbac.authorization.k8s.io
+  
+# ---
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: Role
+# metadata:
+#   name: cluster-deployment-admin-role
+#   namespace: default
+# rules:
+#   - apiGroups:
+#       - "coordination.k8s.io"
+#     resources:
+#       - leases
+#     verbs:
+#       - '*'
+
+# ---
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: cluster-deployment-admin-role
+# rules:
+#   - apiGroups:
+#      - "coordination.k8s.io"
+#     resources:
+#       - "leases"
+#     verbs:
+#       - '*'
+
+# ---
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: cluster-deployment-rbac
+# subjects:
+# - kind: ServiceAccount
+#   name: deployment-admin-sa
+#   namespace: default
+# roleRef:
+#   kind: ClusterRole
+#   name: cluster-deployment-admin-role
+#   apiGroup: rbac.authorization.k8s.io
+
+  #https://stackoverflow.com/questions/49173838/deployments-apps-is-forbidden-user-systemserviceaccountdefaultdefault-cann

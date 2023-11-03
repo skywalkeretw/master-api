@@ -102,7 +102,7 @@ func UpdateKubernetesDeployment(name, namespace string, updateOptions metav1.Upd
 		return updateErr
 	})
 	if retryErr != nil {
-		return fmt.Errorf("Update failed: %v", retryErr)
+		return fmt.Errorf("update failed: %v", retryErr)
 	}
 	return nil
 }

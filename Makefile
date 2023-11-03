@@ -25,8 +25,8 @@ KIND := kind
 
 # Define the Docker-related variables.
 DOCKER := docker
-DOCKER_IMAGE_NAME := myapp-image
-DOCKER_IMAGE_TAG := latest
+DOCKER_IMAGE_NAME := api
+DOCKER_IMAGE_TAG := v1
 DOCKER_BUILD_ARGS := -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Define the path to your Kubernetes manifests directory.
@@ -59,7 +59,7 @@ delete-cluster:
 
 # Target to build the Docker image for your Go application.
 .PHONY: docker-build
-docker-build: build
+docker-build:
 	$(DOCKER) build $(DOCKER_BUILD_ARGS) .
 
 # Target to apply Kubernetes manifests using kubectl.
