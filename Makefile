@@ -45,7 +45,7 @@ build:
 # Target to generate Swagger documentation using Swag.
 .PHONY: swagger
 swagger:
-	$(SWAG) init -g $(MAIN_FILE) -d $(SWAG_DIR)
+	$(SWAG) init --parseDependency
 
 # Target to create a Kind cluster with the specified name and configuration.
 .PHONY: create-cluster

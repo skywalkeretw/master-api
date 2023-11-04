@@ -40,6 +40,11 @@ definitions:
       updateOptions:
         $ref: '#/definitions/v1.UpdateOptions'
     type: object
+  rabbitmq.QueueDeclareData:
+    properties:
+      name:
+        type: string
+    type: object
   resource.Quantity:
     properties:
       Format:
@@ -5284,6 +5289,49 @@ paths:
       summary: Get Kubernetes Pods
       tags:
       - Pods
+  /api/v1/rabbitmq:
+    get:
+      consumes:
+      - application/json
+      description: List all RabbitMQ Queue available in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: List RabbitMQ Queues
+      tags:
+      - Rabbitmq
+  /createQueue:
+    post:
+      consumes:
+      - application/json
+      description: Create a new queue in RabbitMQ.
+      parameters:
+      - description: Queue data
+        in: body
+        name: QueueData
+        required: true
+        schema:
+          $ref: '#/definitions/rabbitmq.QueueDeclareData'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a new queue
   /healthcheck:
     get:
       description: Perform a healthcheck

@@ -192,6 +192,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/rabbitmq": {
+            "get": {
+                "description": "List all RabbitMQ Queue available in the system",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Rabbitmq"
+                ],
+                "summary": "List RabbitMQ Queues",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/createQueue": {
+            "post": {
+                "description": "Create a new queue in RabbitMQ.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Create a new queue",
+                "parameters": [
+                    {
+                        "description": "Queue data",
+                        "name": "QueueData",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rabbitmq.QueueDeclareData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/healthcheck": {
             "get": {
                 "description": "Perform a healthcheck",
@@ -299,6 +365,14 @@ const docTemplate = `{
                 },
                 "updateOptions": {
                     "$ref": "#/definitions/v1.UpdateOptions"
+                }
+            }
+        },
+        "rabbitmq.QueueDeclareData": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
                 }
             }
         },
