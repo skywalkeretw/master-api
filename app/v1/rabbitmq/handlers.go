@@ -46,3 +46,21 @@ func CreateQueueHandler(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"msg": fmt.Sprintf("Queue '%s' created successfully.\n", queueData.Name)})
 }
+
+// func GetQueueHandler(ctx *gin.Context) {
+// 	name := ctx.Param("name")
+// 	err := GetQueue(name)
+// 	if err != nil {
+// 		ctx.AbortWithError(http.StatusNotFound, err)
+// 	}
+// 	ctx.JSON(http.StatusOK, gin.H{"deleted": true})
+// }
+
+// func DeleteQueueHandler(ctx *gin.Context) {
+// 	name := ctx.Param("name")
+// 	err := DeleteQueue(name)
+// 	if err != nil {
+// 		ctx.AbortWithError(http.StatusNotFound, err)
+// 	}
+// 	ctx.JSON(http.StatusOK, gin.H{"deleted": true})
+// }

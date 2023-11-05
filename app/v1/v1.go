@@ -17,8 +17,9 @@ func ConfigureRoutes(v1 *gin.RouterGroup) {
 	v1.PATCH("/app", kubernets.UpdateAppHandler)
 
 	v1.GET("/queue", rabbitmq.ListQueuesHandler)
-	v1.GET("/queue/:name", rabbitmq.ListQueuesHandler)
+	// v1.GET("/queue/:name", rabbitmq.GetQueueHandler)
 	v1.POST("/queue", rabbitmq.CreateQueueHandler)
+	// v1.DELETE("/queue", rabbitmq.DeleteQueueHandler)
 	// v1.POST("/generateadapter")
 	// v1.POST("/deployapp")
 

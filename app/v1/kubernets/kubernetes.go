@@ -106,3 +106,55 @@ func UpdateKubernetesDeployment(name, namespace string, updateOptions metav1.Upd
 	}
 	return nil
 }
+
+// GetKubernetesServices retrieves a list of all services in the Kubernetes cluster within the specified namespace.
+func GetKubernetesServices(namespace string) ([]corev1.Service, error) {
+	// Retrieve the list of services in the specified namespace
+	services, err := clientset.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return services.Items, nil
+}
+
+// GetKubernetesService retrieves information about a specific service in the Kubernetes cluster.
+func GetKubernetesService(name, namespace string) (*corev1.Service, error) {
+	service, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return service, nil
+}
+
+// DeleteKubernetesService deletes a specific service in the Kubernetes cluster.
+func DeleteKubernetesService(name, namespace string) error {
+	err := clientset.CoreV1().Services(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateKubernetesService updates a specific service in the Kubernetes cluster.
+func UpdateKubernetesService(name, namespace string, updateOptions metav1.UpdateOptions) error {
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Fetch the latest service object
+		service, err := GetKubernetesService(name, namespace)
+		if err != nil {
+			return err
+		}
+		// Modify the service as needed
+		// service.Spec.Ports = newPorts // For example, change the ports configuration
+
+		// Update the service
+		_, updateErr := clientset.CoreV1().Services(namespace).Update(context.TODO(), service, metav1.UpdateOptions{})
+		return updateErr
+	})
+	if retryErr != nil {
+		return fmt.Errorf("update failed: %v", retryErr)
+	}
+	return nil
+}
