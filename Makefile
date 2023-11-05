@@ -49,8 +49,11 @@ swagger:
 
 # Target to create a Kind cluster with the specified name and configuration.
 .PHONY: create-cluster
-create-cluster:
+create-cluster: docker-build create-kind-cluster kubectl-apply
+
+create-kind-cluster:
 	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
+	kind load docker-image --name $(KIND_CLUSTER_NAME) $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Target to delete the Kind cluster with the specified name.
 .PHONY: delete-cluster
@@ -63,23 +66,19 @@ docker-build:
 	$(DOCKER) build $(DOCKER_BUILD_ARGS) .
 
 # Target to apply Kubernetes manifests using kubectl.
-.PHONY: kubectl-apply
-kubectl-apply:
+.PHONY: deploy-api
+deploy-api:
 	kubectl apply -f $(KUBE_MANIFESTS)
 
-# Target to delete resources in the cluster.
-.PHONY: kubectl-delete
-kubectl-delete:
-	kubectl delete -f $(KUBE_MANIFESTS)
+.PHONY: rabbitmq
+rabbitmq:
+	kubectl apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
+	kubectl apply -f deployment/rabbitmq.yml
 
 # Target to run tests for your Go application.
 .PHONY: test
 test:
 	$(GO_TEST) ./...
-
-# Default target when you run "make" without specifying a target.
-.PHONY: all
-all: build run
 
 # Clean up generated files and artifacts.
 .PHONY: clean
