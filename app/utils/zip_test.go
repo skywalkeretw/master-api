@@ -10,44 +10,52 @@ import (
 )
 
 func TestZipFolder(t *testing.T) {
-	// Create a temporary directory for testing
-	tempDir := t.TempDir()
-
-	// Create some test files in the temporary directory
-	testFile1 := filepath.Join(tempDir, "file1.txt")
-	testFile2 := filepath.Join(tempDir, "file2.txt")
-
-	if err := os.WriteFile(testFile1, []byte("Test content 1"), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := os.WriteFile(testFile2, []byte("Test content 2"), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	// Define the expected zip file path
-	expectedZipFile := filepath.Join(tempDir, "output.zip")
 
 	var tests = []struct {
-		sourceFolder string
-		zipFile      string
+		testFiles []struct {
+			name    string
+			content string
+		}
+		zipFileName string
 	}{
-		{tempDir, expectedZipFile},
+		{
+			testFiles: []struct {
+				name    string
+				content string
+			}{
+				{"file1.txt", "Test content 1"},
+				{"file2.txt", "Test content 2"},
+			},
+			zipFileName: "output.zip",
+		},
 	}
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			err := ZipFolder(tt.sourceFolder, tt.zipFile)
+			// Create a temporary directory for testing
+			tempDir := t.TempDir()
+
+			// Create some test files in the temporary directory
+			for _, testfile := range tt.testFiles {
+				filePath := filepath.Join(tempDir, testfile.name)
+				if err := os.WriteFile(filePath, []byte(testfile.content), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			zipFile := filepath.Join(tempDir, tt.zipFileName)
+
+			err := ZipFolder(tempDir, zipFile)
 
 			// Check if there was an error during zipFolder
 			assert.Nil(t, err)
 
 			// Check if the zip file was created
-			_, err = os.Stat(tt.zipFile)
+			_, err = os.Stat(zipFile)
 			assert.False(t, os.IsNotExist(err), "Zip file should be created")
 
 			// Cleanup: Remove the created zip file
-			if err := os.Remove(tt.zipFile); err != nil {
+			if err := os.Remove(zipFile); err != nil {
 				t.Fatal(err)
 			}
 		})
