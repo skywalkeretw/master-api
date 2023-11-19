@@ -1,5 +1,11 @@
 package openapi
 
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
+
 // OpenAPI represents the OpenAPI specification.
 type OpenAPI struct {
 	Openapi      string                `json:"openapi"`
@@ -55,6 +61,7 @@ type Operation struct {
 	Summary     string              `json:"summary,omitempty"`
 	Description string              `json:"description,omitempty"`
 	OperationID string              `json:"operationId,omitempty"`
+	Deprecated  bool                `json:"deprecated"`
 	Responses   map[string]Response `json:"responses"`
 	// Add other Operation fields as needed
 }
@@ -113,4 +120,15 @@ type Contact struct {
 type License struct {
 	Name string `json:"name"`
 	URL  string `json:"url,omitempty"`
+}
+
+func GetSwaggerCodegenHelp() {
+	cmd := exec.Command("swagger-codegen", "-h")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }

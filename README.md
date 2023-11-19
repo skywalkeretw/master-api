@@ -120,3 +120,14 @@ make clean
 1. Use the provided Makefile targets to build, run, and deploy your Go application as needed.
 1. Customize the Makefile variables to match your project's configuration.
 1. Refer to the Makefile documentation for more details on each target and their usage.
+
+# Brain storming:
+
+use `npm install -g @stoplight/prism-cli` to mock the api based on open api `prism mock ./openapi.yml -p 8080`
+
+1. Generate the Server based on 
+
+https://swagger.io/docs/open-source-tools/swagger-codegen/
+https://github.com/swagger-api/swagger-codegen#homebrew
+https://www.asyncapi.com/docs/tutorials/getting-started˝
+file:///Users/lukeroy/Downloads/OpenAPI+Specification+Zero+to+Master.pdf

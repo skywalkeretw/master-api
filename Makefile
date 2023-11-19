@@ -49,7 +49,7 @@ swagger:
 
 # Target to create a Kind cluster with the specified name and configuration.
 .PHONY: create-cluster
-create-cluster: docker-build create-kind-cluster kubectl-apply
+create-cluster: docker-build create-kind-cluster deploy-api
 
 create-kind-cluster:
 	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
