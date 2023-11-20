@@ -1,0 +1,27 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Hello World API",
+      "version": "1.0.0",
+      "description": "A simple API that returns 'Hello, World!'"
+    },
+    "paths": {
+      "/": {
+        "get": {
+          "summary": "Get Hello World",
+          "description": "Returns a greeting message.",
+          "responses": {
+            "200": {
+              "description": "Successful response",
+              "content": {
+                "text/plain": {
+                  "example": "Hello, World!"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
