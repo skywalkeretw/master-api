@@ -44,13 +44,10 @@ func Contains(slice []string, str string) bool {
 // and creates missing folders if specified in the path
 func GenerateTempFolder() (string, error) {
 	// Generate a random UUID for the folder name
-	randomFolderName := fmt.Sprintf("temp_folder_%s", uuid.New())
-
-	// Get the absolute path to the system's temporary directory
-	tempDir := os.TempDir()
+	randomFolderName := fmt.Sprintf("gen_code_%s", uuid.New())
 
 	// Create the full path for the temporary folder
-	tempFolderPath := filepath.Join(tempDir, "output", randomFolderName)
+	tempFolderPath := filepath.Join("generate", "output", randomFolderName)
 
 	// Create missing folders if specified in the path
 	if err := os.MkdirAll(filepath.Dir(tempFolderPath), os.ModePerm); err != nil {
@@ -114,9 +111,9 @@ func CreateJSONFile(filename string, data interface{}) error {
 
 // ConvertToLowerAndReplaceSpaces removes leading and trailing whitespaces, converts a string to lowercase,
 // and replaces spaces with hyphens
-func TransformTitle2Filename(input string) string {
+func TransformTitle2FilenamePath(input ...string) string {
 	// Remove leading and trailing whitespaces
-	trimmedString := strings.TrimSpace(input)
+	trimmedString := strings.TrimSpace(input[len(input)-1])
 
 	// Convert the string to lowercase
 	lowercaseString := strings.ToLower(trimmedString)
@@ -129,6 +126,8 @@ func TransformTitle2Filename(input string) string {
 	}
 	// Append ".json" to the end of the string
 	result = result + ".json"
-
-	return result
+	slice := input[:len(input)-1]
+	slice = append(slice, result)
+	path := filepath.Join(slice...)
+	return path
 }

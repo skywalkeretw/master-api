@@ -181,19 +181,21 @@ func TestCreateJSONFile(t *testing.T) {
 func TestTransformTitle2Filename(t *testing.T) {
 	var tests = []struct {
 		testName       string
-		input          string
+		input          []string
 		expectedOutput string
 	}{
-		{"Test1", " Hello World ", "hello-world.json"},
-		{"Test2", " This is a Test ", "this-is-a-test.json"},
-		{"Test3", "  Multiple  Spaces  ", "multiple--spaces.json"},
-		{"Test4", "", ""},
-		{"Test5", "   OnlySpaces  ", "onlyspaces.json"},
+		{"Test1", []string{" Hello World "}, "hello-world.json"},
+		{"Test2", []string{" This is a Test "}, "this-is-a-test.json"},
+		{"Test3", []string{"  Multiple  Spaces  "}, "multiple--spaces.json"},
+		{"Test4", []string{""}, ""},
+		{"Test5", []string{"   OnlySpaces  "}, "onlyspaces.json"},
+		{"Test6", []string{"my", "dir", "   OnlySpaces  "}, "my/dir/onlyspaces.json"},
+		{"Test2", []string{"generate", "temp", " Hello World api "}, "generate/temp/hello-world-api.json"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			output := TransformTitle2Filename(tt.input)
+			output := TransformTitle2FilenamePath(tt.input...)
 
 			// Check if the output matches the expected output
 			assert.Equal(t, tt.expectedOutput, output)

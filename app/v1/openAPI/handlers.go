@@ -1,8 +1,9 @@
 package openapi
 
 import (
+	"fmt"
 	"net/http"
-	"path/filepath"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skywalkeretw/master-api/app/utils"
@@ -26,7 +27,8 @@ func GenerateServerStubHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	oasFilePath := filepath.Join("generate", "server", utils.TransformTitle2Filename(oas.Info.Title))
+
+	oasFilePath := utils.TransformTitle2FilenamePath("generate", "swaggerjson", oas.Info.Title)
 	if err := utils.CreateJSONFile(oasFilePath, oas); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -38,6 +40,10 @@ func GenerateServerStubHandler(ctx *gin.Context) {
 		return
 	}
 	ctx.File(serverZipPath)
+	if err != nil {
+		fmt.Println("failed to delete swagger json")
+		// return "", err
+	}
 }
 
 func GenerateClientHandler(ctx *gin.Context) {
@@ -46,13 +52,18 @@ func GenerateClientHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	oasFilePath := filepath.Join("dir", "subdir", utils.TransformTitle2Filename(oas.Info.Title))
+	oasFilePath := utils.TransformTitle2FilenamePath("generate", "swaggerjson", oas.Info.Title)
 	utils.CreateJSONFile(oasFilePath, oas)
 
-	clientZipPath, err := GenerateClient(oasFilePath, ":todo add language")
+	clientZipPath, err := GenerateClient(oasFilePath, "javascript")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generete Server Stub"})
 		return
 	}
 	ctx.File(clientZipPath)
+	err = os.Remove(clientZipPath)
+	if err != nil {
+		fmt.Println("failed to delete swagger json")
+		// return "", err
+	}
 }

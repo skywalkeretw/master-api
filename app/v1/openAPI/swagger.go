@@ -18,11 +18,10 @@ func GenerateServerStub(swaggerSpecPath, language string) (string, error) {
 		return "", err
 	}
 
-	shelloutput, err := utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpecPath, "-l", language, "-o", serverCodeTmpDirPath)
+	_, err = utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpecPath, "-l", language, "-o", serverCodeTmpDirPath)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(shelloutput)
 
 	zipPath := fmt.Sprintf("/generate/%s.zip", language)
 	err = utils.ZipFolder(serverCodeTmpDirPath, zipPath)
@@ -42,23 +41,32 @@ func GenerateServerStub(swaggerSpecPath, language string) (string, error) {
 	return zipPath, nil
 }
 
-func GenerateClient(swaggerSpec, language string) (string, error) {
+func GenerateClient(swaggerSpecPath, language string) (string, error) {
 	utils.Contains(clients, language)
-	outputPath, err := utils.GenerateTempFolder()
+	clientCodeTmpDirPath, err := utils.GenerateTempFolder()
 	if err != nil {
 		return "", err
 	}
 
-	shelloutput, err := utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpec, "-l", language, "-o", outputPath)
+	_, err = utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpecPath, "-l", language, "-o", clientCodeTmpDirPath)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(shelloutput)
-	zipPath := fmt.Sprintf("/output/%s.zip", language)
 
-	err = utils.ZipFolder(outputPath, zipPath)
+	zipPath := fmt.Sprintf("/generate/%s.zip", language)
+	err = utils.ZipFolder(clientCodeTmpDirPath, zipPath)
 	if err != nil {
 		return "", err
+	}
+	err = utils.DeleteFolder(clientCodeTmpDirPath)
+	if err != nil {
+		fmt.Println("failed to delete folder")
+		// return "", err
+	}
+	err = os.Remove(swaggerSpecPath)
+	if err != nil {
+		fmt.Println("failed to delete swagger json")
+		// return "", err
 	}
 	return zipPath, nil
 }
