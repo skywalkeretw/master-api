@@ -19,10 +19,11 @@ FROM alpine AS build-release-stage
 
 
 WORKDIR /bin
-
-RUN apk update && apk add bash openjdk11 && \
+# install bash, Java11 and Nodejs for Swagger Codegen CLI and AsyncAPI CLI
+RUN apk update && apk add bash openjdk11 curl nodejs npm && \
     wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.50/swagger-codegen-cli-3.0.50.jar -O swagger-codegen-cli.jar && \
-    echo '#!/bin/bash' > /bin/swagger-codegen && echo 'java -jar /bin/swagger-codegen-cli.jar "$@"' >> /bin/swagger-codegen && chmod +x /bin/swagger-codegen
+    echo '#!/bin/bash' > /bin/swagger-codegen && echo 'java -jar /bin/swagger-codegen-cli.jar "$@"' >> /bin/swagger-codegen && chmod +x /bin/swagger-codegen && \
+    npm install -g @asyncapi/cli
 
 
 WORKDIR /
