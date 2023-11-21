@@ -20,8 +20,8 @@ FROM alpine AS build-release-stage
 
 WORKDIR /bin
 
-RUN apk update && apk add bash openjdk8 && \
-    wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.0/swagger-codegen-cli-3.0.0.jar -O swagger-codegen-cli.jar && \
+RUN apk update && apk add bash openjdk11 && \
+    wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.50/swagger-codegen-cli-3.0.50.jar -O swagger-codegen-cli.jar && \
     echo '#!/bin/bash' > /bin/swagger-codegen && echo 'java -jar /bin/swagger-codegen-cli.jar "$@"' >> /bin/swagger-codegen && chmod +x /bin/swagger-codegen
 
 

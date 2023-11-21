@@ -26,18 +26,33 @@ func GenerateServerStubHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	oasFilePath := filepath.Join("dir", "subdir", utils.TransformTitle2Filename(oas.Info.Title))
-	utils.CreateJSONFile(oasFilePath, oas)
+	oasFilePath := filepath.Join("generate", "server", utils.TransformTitle2Filename(oas.Info.Title))
+	if err := utils.CreateJSONFile(oasFilePath, oas); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-	serverZipPath, err := GenerateServerStub(oasFilePath, ":todo add language")
+	serverZipPath, err := GenerateServerStub(oasFilePath, "go-server")
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generete Server Stub"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generete Server Stub" + err.Error()})
 		return
 	}
 	ctx.File(serverZipPath)
 }
 
 func GenerateClientHandler(ctx *gin.Context) {
-	GenerateClient()
-	ctx.File()
+	var oas OpenAPI
+	if err := ctx.BindJSON(&oas); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	oasFilePath := filepath.Join("dir", "subdir", utils.TransformTitle2Filename(oas.Info.Title))
+	utils.CreateJSONFile(oasFilePath, oas)
+
+	clientZipPath, err := GenerateClient(oasFilePath, ":todo add language")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generete Server Stub"})
+		return
+	}
+	ctx.File(clientZipPath)
 }

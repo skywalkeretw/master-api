@@ -65,6 +65,10 @@ delete-cluster:
 docker-build:
 	$(DOCKER) build $(DOCKER_BUILD_ARGS) .
 
+.PHONY: docker-build-load
+docker-build-load: docker-build
+	kind load docker-image --name $(KIND_CLUSTER_NAME) $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+
 # Target to apply Kubernetes manifests using kubectl.
 .PHONY: deploy-api
 deploy-api:

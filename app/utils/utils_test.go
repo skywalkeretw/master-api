@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,28 +64,32 @@ func TestContains(t *testing.T) {
 
 func TestGenerateTempFolder(t *testing.T) {
 	var tests = []struct {
-		testName string
+		testName       string
+		expectedErrMsg string
 	}{
-		{"Test1"},
-		{"Test2"},
-		{"Test3"},
+		{"Test1", ""},
+		{"Test2", ""},
+		{"Test3", ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			// Call the function to generate a temporary folder
 			tempFolderPath, err := GenerateTempFolder()
 
-			// Check if there was an error during generateTempFolder
-			assert.Nil(t, err)
+			// Check if an error occurred and if the error message contains the expected string
+			if tt.expectedErrMsg != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedErrMsg)
+			} else {
+				// If no error is expected, assert that the error is nil
+				assert.NoError(t, err)
 
-			// Check if the temporary folder was created
-			_, err = os.Stat(tempFolderPath)
-			assert.False(t, os.IsNotExist(err), "Temporary folder should be created")
+				// Check if the folder was created successfully
+				_, statErr := os.Stat(tempFolderPath)
+				assert.NoError(t, statErr)
 
-			// Cleanup: Remove the created temporary folder
-			if err := os.RemoveAll(tempFolderPath); err != nil {
-				t.Fatal(err)
+				// Remove the created folder after the test
+				defer os.RemoveAll(tempFolderPath)
 			}
 		})
 	}
@@ -144,7 +149,7 @@ func TestCreateJSONFile(t *testing.T) {
 	}{
 		{"Test1", "testfile1.json", ExampleData{Name: "Example1", Value: 42}, ""},
 		{"Test2", "testfile2.json", ExampleData{Name: "Example2", Value: 99}, ""},
-		{"Test3", "invalidpath/invalidfile.json", ExampleData{Name: "Example3", Value: 123}, "failed to write JSON file:"},
+		{"Test3", "nested/directory/testfile.json", ExampleData{Name: "NestedFile", Value: 789}, ""},
 	}
 
 	for _, tt := range tests {
@@ -165,6 +170,9 @@ func TestCreateJSONFile(t *testing.T) {
 
 				// Remove the created file after the test
 				defer os.Remove(tt.filename)
+
+				// Remove the created directory if not empty (for nested paths)
+				defer os.RemoveAll(filepath.Dir(tt.filename))
 			}
 		})
 	}

@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
+
+	"github.com/google/uuid"
 )
 
 // RunShellCommand runs a shell command and returns the output and error
@@ -40,18 +40,22 @@ func Contains(slice []string, str string) bool {
 	return false
 }
 
+// GenerateTempFolder generates a temporary folder with a random name using UUID
+// and creates missing folders if specified in the path
 func GenerateTempFolder() (string, error) {
-	// Set up a random seed based on the current time
-	rand.Seed(time.Now().UnixNano())
-
-	// Generate a random folder name (you may use a more sophisticated method)
-	randomFolderName := fmt.Sprintf("/output/temp_folder_%d", rand.Intn(10000))
+	// Generate a random UUID for the folder name
+	randomFolderName := fmt.Sprintf("temp_folder_%s", uuid.New())
 
 	// Get the absolute path to the system's temporary directory
 	tempDir := os.TempDir()
 
 	// Create the full path for the temporary folder
-	tempFolderPath := filepath.Join(tempDir, randomFolderName)
+	tempFolderPath := filepath.Join(tempDir, "output", randomFolderName)
+
+	// Create missing folders if specified in the path
+	if err := os.MkdirAll(filepath.Dir(tempFolderPath), os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to create missing folders: %v", err)
+	}
 
 	// Create the temporary folder
 	err := os.Mkdir(tempFolderPath, os.ModePerm)
@@ -81,11 +85,21 @@ func DeleteFolder(folderPath string) error {
 	return nil
 }
 
+// CreateJSONFile creates a JSON file with the content of a struct
+// and creates the specified directories if missing
 func CreateJSONFile(filename string, data interface{}) error {
+	// Get the directory path from the filename
+	dir := filepath.Dir(filename)
+
 	// Marshal the struct to JSON format
 	jsonContent, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+
+	// Create the specified directories if missing
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directories: %v", err)
 	}
 
 	// Write the JSON content to the file
