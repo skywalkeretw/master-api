@@ -64,7 +64,7 @@ func init() {
 	var err error
 	conn, err = amqp.Dial(dialUrl)
 	if err != nil {
-		fmt.Printf(err.Error())
+		fmt.Println(err.Error())
 	}
 }
 

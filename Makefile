@@ -49,7 +49,7 @@ swagger:
 
 # Target to create a Kind cluster with the specified name and configuration.
 .PHONY: create-cluster
-create-cluster: docker-build create-kind-cluster kubectl-apply
+create-cluster: docker-build create-kind-cluster deploy-api
 
 create-kind-cluster:
 	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
@@ -64,6 +64,10 @@ delete-cluster:
 .PHONY: docker-build
 docker-build:
 	$(DOCKER) build $(DOCKER_BUILD_ARGS) .
+
+.PHONY: docker-build-load
+docker-build-load: docker-build
+	kind load docker-image --name $(KIND_CLUSTER_NAME) $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Target to apply Kubernetes manifests using kubectl.
 .PHONY: deploy-api

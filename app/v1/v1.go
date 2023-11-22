@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/skywalkeretw/master-api/app/v1/kubernets"
+	openapi "github.com/skywalkeretw/master-api/app/v1/openAPI"
 	"github.com/skywalkeretw/master-api/app/v1/rabbitmq"
 )
 
@@ -19,6 +20,9 @@ func ConfigureRoutes(v1 *gin.RouterGroup) {
 	v1.GET("/queue", rabbitmq.ListQueuesHandler)
 	// v1.GET("/queue/:name", rabbitmq.GetQueueHandler)
 	v1.POST("/queue", rabbitmq.CreateQueueHandler)
+	v1.GET("/help", openapi.SwaggerCodegenHelpHandler)
+	v1.POST("/generateserver", openapi.GenerateServerStubHandler)
+	v1.POST("/generateclient", openapi.GenerateClientHandler)
 	// v1.DELETE("/queue", rabbitmq.DeleteQueueHandler)
 	// v1.POST("/generateadapter")
 	// v1.POST("/deployapp")
