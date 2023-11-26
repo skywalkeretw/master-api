@@ -201,3 +201,25 @@ func TestTransformTitle2Filename(t *testing.T) {
 		})
 	}
 }
+
+func TestInt32Ptr(t *testing.T) {
+	tests := []struct {
+		input    int
+		expected *int32
+		testName string
+	}{
+		{input: 0, expected: Int32Ptr(0), testName: "Test1"},
+		{input: 42, expected: Int32Ptr(42), testName: "Test2"},
+		{input: -5, expected: Int32Ptr(-5), testName: "Test3"},
+		{input: 10, expected: Int32Ptr(10), testName: "Test4"},
+		{input: -20, expected: Int32Ptr(-20), testName: "Test5"},
+		{input: 100, expected: Int32Ptr(100), testName: "Test6"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			result := Int32Ptr(test.input)
+			assert.Equal(t, test.expected, result, "For input %d", test.input)
+		})
+	}
+}

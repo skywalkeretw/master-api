@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/skywalkeretw/master-api/app/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,6 +71,46 @@ func GetKubernetesDeployment(name, namespace string) (*appsv1.Deployment, error)
 	}
 
 	return deployment, nil
+}
+
+// CreateKubernetesDeployment creates a new deployment in the Kubernetes cluster.
+func CreateKubernetesDeployment(name, namespace string, replicas int, template corev1.PodTemplateSpec) error {
+	// Define the deployment object
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: utils.Int32Ptr(replicas), // Set the number of replicas as needed
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": name},
+			},
+			Template: template,
+			// Template: appsv1.PodTemplateSpec{
+			// 	ObjectMeta: metav1.ObjectMeta{
+			// 		Labels: map[string]string{"app": name},
+			// 	},
+			// 	Spec: appsv1.PodSpec{
+			// 		Containers: []appsv1.Container{
+			// 			{
+			// 				Name:  "example-container",
+			// 				Image: "nginx:latest", // Set the container image as needed
+			// 			},
+			// 		},
+			// 	},
+			// },
+		},
+	}
+
+	// Create the deployment
+	_, err := clientset.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create deployment: %v", err)
+	}
+
+	fmt.Printf("Deployment %s created successfully in namespace %s\n", name, namespace)
+	return nil
 }
 
 // DeleteKubernetesDeployment deletes a specific deployment in the Kubernetes cluster.
