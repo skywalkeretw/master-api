@@ -1,6 +1,7 @@
 package kubernets
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -59,6 +60,99 @@ func TestGetKubernetesDeployment(t *testing.T) {
 			assert.Equal(t, deployment.Name, tt.name)
 		})
 
+	}
+}
+
+func TestCreateKubernetesDeployment(t *testing.T) {
+	tests := []struct {
+		name          string
+		namespace     string
+		replicas      int
+		mockClientset kubernetes.Interface
+		template      corev1.PodTemplateSpec
+		expectErr     bool
+	}{
+		{
+			name:          "test-deployment",
+			namespace:     "default",
+			replicas:      1,
+			mockClientset: testclient.NewSimpleClientset(),
+			template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "test-deployment"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "test-container",
+							Image: "nginx:latest",
+						},
+					},
+				},
+			},
+			expectErr: false,
+		},
+		// {
+		// 	name:          "invalid-replicas",
+		// 	namespace:     "default",
+		// 	replicas:      -1,
+		// 	mockClientset: testclient.NewSimpleClientset(),
+		// 	template: corev1.PodTemplateSpec{
+		// 		ObjectMeta: metav1.ObjectMeta{
+		// 			Labels: map[string]string{"app": "invalid-replicas"},
+		// 		},
+		// 		Spec: corev1.PodSpec{
+		// 			Containers: []corev1.Container{
+		// 				{
+		// 					Name:  "test-container",
+		// 					Image: "nginx:latest",
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// 	expectErr: true,
+		// },
+		{
+			name:          "empty-namespace",
+			namespace:     "",
+			replicas:      3,
+			mockClientset: testclient.NewSimpleClientset(),
+			template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "empty-namespace"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "test-container",
+							Image: "nginx:latest",
+						},
+					},
+				},
+			},
+			expectErr: false,
+		},
+		// Add more test cases as needed
+	}
+
+	for _, tt := range tests {
+		clientset = tt.mockClientset
+		t.Run(tt.name, func(t *testing.T) {
+			// Run the function with the test case inputs
+			err := CreateKubernetesDeployment(tt.name, tt.namespace, tt.replicas, tt.template)
+
+			// Check if the error matches the expected result
+			assert.Equal(t, tt.expectErr, err != nil)
+
+			// Check if the deployment was created in the fake clientset
+			if !tt.expectErr {
+				deployment, err := clientset.AppsV1().Deployments(tt.namespace).Get(context.TODO(), tt.name, metav1.GetOptions{})
+				assert.Equal(t, false, err != nil)
+
+				// Check if the deployment has the expected number of replicas
+				assert.Equal(t, tt.replicas, int(*deployment.Spec.Replicas))
+			}
+		})
 	}
 }
 

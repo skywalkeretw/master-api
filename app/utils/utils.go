@@ -131,3 +131,9 @@ func TransformTitle2FilenamePath(input ...string) string {
 	path := filepath.Join(slice...)
 	return path
 }
+
+// Int32Ptr functionto get a pointer of type int32
+func Int32Ptr(i int) *int32 {
+	i32 := int32(i)
+	return &i32
+}
