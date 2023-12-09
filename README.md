@@ -121,7 +121,7 @@ make clean
 1. Customize the Makefile variables to match your project's configuration.
 1. Refer to the Makefile documentation for more details on each target and their usage.
 
-# Brain storming:
+## Brain storming:
 
 use `npm install -g @stoplight/prism-cli` to mock the api based on open api `prism mock ./openapi.yml -p 8080`
 
@@ -131,3 +131,7 @@ https://swagger.io/docs/open-source-tools/swagger-codegen/
 https://github.com/swagger-api/swagger-codegen#homebrew
 https://www.asyncapi.com/docs/tutorials/getting-started˝
 file:///Users/lukeroy/Downloads/OpenAPI+Specification+Zero+to+Master.pdf
+
+# Usefull links
+Choosing the Right Open-Source FaaS Platform: A Comparative Guide:
+https://medium.com/@patrickkoss/choosing-the-right-open-source-faas-platform-a-comparative-guide-3da55be0a7fa

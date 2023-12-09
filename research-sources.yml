@@ -1,0 +1,167 @@
+- title: "Choosing the Right Open-Source FaaS Platform: A Comparative Guide"
+  url: "https://medium.com/@patrickkoss/choosing-the-right-open-source-faas-platform-a-comparative-guide-3da55be0a7fa"
+  type: blog
+  notes: |
+    Functions as a Service shifts focus away from server management and low-level infrastructure an towards business logic
+    Functions are event driven and only generate cost when called.
+    Benefits: faster development and deployment cycles, highly scalable cost-effective
+    benefits Open Source FaaS Plattforms: greater control over your environment, avoid vendor, lock-in foster innovation and collaboration from community
+    
+    Fission: Fission is a language-agnostic serverless framework with its core in Go, supporting multiple languages like NodeJS, Python, Go, Java, Ruby, PHP, Bash, and Linux executables, 
+    focusing on fast function execution with a pool of "warm" containers for quick response times. It simplifies running code functions on Kubernetes, offering autoscaling, resource limit specifications, 
+    and diverse triggers like HTTP, Timer, Message Queue, and Kubernetes Watch Triggers. 
+    With the ability to run on any Kubernetes cluster, Fission has gained popularity on GitHub with 7.7 thousand stars, boasting an active community and providing comprehensive support for observability tools like Prometheus, OpenTelemetry, Loki, and Linkerd.
+    
+    Knative: Knative is a language-agnostic platform supporting containerized workloads, offering flexibility for developers with compatibility for various languages. 
+    It includes a performance testing guide using Iter8, demonstrating configuration for tests and specifying service-level objectives. Knative supports auto-scaling, handles increasing loads effectively, and provides a simple programming model for creating, building, and deploying event-driven functions without deep knowledge of Kubernetes or Dockerfiles. 
+    It is compatible with brokers like Kafka and RabbitMQ, has a robust Serving API for quick deployment of serverless containers, and enjoys strong support from Google with an active community, evident from its 5,000 GitHub stars and 254 contributors. 
+    Monitoring and debugging are facilitated through Kubernetes tooling, enabling tracing of various sources and log collection with Fluentbit and Prometheus for metrics gathering.
+    
+    Nuclio: Nuclio is a versatile serverless framework supporting Python, Go, Java, Node.js, .NET Core, JVM, and Shell, known for impressive execution times and scalability, claiming to be 10–100 times faster than some alternatives. 
+    It scales efficiently, supports both CPUs and GPUs, and allows scaling to zero. With user-friendly documentation, Nuclio facilitates function deployment through a step-by-step process using the command-line tool nuctl. It supports various triggers, including HTTP requests, Kafka, RabbitMQ, Amazon Kinesis, Nats, MQTT, and time-based triggers like Cron, while prioritizing portability across different platforms and providing persistent data connections. 
+    The project has gained significant attention on GitHub with 4.8k stars and a lively community of 76 contributors, offering support for logging and metrics with dedicated sinks.    
+    
+    OpenFaaS: OpenFaaS supports a variety of programming languages, emphasizing the importance of proper performance testing with recommendations for testing environments and tools. 
+    It is designed to handle traffic spikes, scale down when idle, and is described as user-friendly with a built-in UI, powerful CLI, and one-click installation, although ease of use depends on user familiarity with technologies like Docker and programming languages. 
+    The professional version includes support for additional event sources, while the community version extends support to various triggers. 
+    OpenFaaS is a portable platform running on any cloud or on-premises, backed by a substantial GitHub community with 23.1k stars, and it suggests monitoring through tools like Prometheus and Grafana, although specifics on debugging tools are not detailed in the documentation.
+    
+    Kubeless: is a Kubernetes-native serverless framework, leveraging Custom Resource Definitions to deploy small code snippets, 
+    automatically handling infrastructure aspects like auto-scaling, API routing, monitoring, and troubleshooting, by dynamically injecting function code into runtimes for HTTP or PubSub access.
+    
+    OpenWhisk: Serverless functions plattform for creating serverless apis
+
+    In conclusion, while Fission, Knative, Nuclio, and OpenFaaS share common features as Kubernetes-based, language-supporting FaaS solutions, their differences should guide the choice. 
+    Fission excels in developer productivity, Nuclio in performance, OpenFaaS in user-friendliness, and Knative in flexibility with strong community support. 
+    The decision among these platforms depends on specific organizational needs, and excluding OpenFaaS due to its paid pro version, Knative stands out for its flexibility and community involvement, suggesting ongoing evolution and adaptation to user needs. 
+    However, the ultimate choice should be based on a thorough evaluation aligned with the organization's unique requirements.
+
+
+
+- title: From zero to Async API 
+  url: https://www.youtube.com/watch?v=g2pqCIhXQ3k
+  type: video
+  notes: |
+    AsyncAPI just like open API is used to define the Functions
+    It uses
+
+- title: HTTP vs Messaging for Microservices Communications
+  url: https://dzone.com/articles/http-vs-messaging-for-microservices-communications
+  type: blog
+  notes: |
+    Microservices are scalable, independently deployable services which communicatio over a Network.
+    2 Popular methods of communication are HTTP and Messaging (RabbitMQ, Apache Kafka, or Amazon SQS)
+    HTTP uses a server client apporach.
+    Advantages of HTTP:
+    Simple to use and implemten
+    Statelessness each request is handled individually making the system naturaly scalable
+    Caching can be enabled to improve performance
+    Disadvantages of HTTP:
+    Latency can become a issue when exchaning large amounts of data
+    Increaced complexity as the number of endpoints increace making maintanance and updates diffucult
+    communication in Networkdependant and can be impacted by slow networks of failures
+    Messaging uses message brokers to route messages across queues between microservices decoupling the client and server
+    Advantages of Messaging:
+    Highly scalable as multiple consumers can be utilised
+    Highly reliable and fault tolerant as communication is queued until correctly proccessd
+    high support for various data types and structures
+    Disadvantages of Messaging:
+    Complexity in setting up and managing messaging systems
+    multiple Protocosl used in messaging mqtt amqp ...
+    Requires additional infrastructure such as broker servers
+    HTTP is a more straightforward and well-established protocol, making it easier to implement and integrate with existing infrastructure such as load balancers and proxies
+    messaging provides a more robust and flexible communication mechanism and additional communication design patterns
+
+- title: Microservices Communications
+  url: https://medium.com/design-microservices-architecture-with-patterns/microservices-communications-f319f8d76b71
+  type: blog
+  notes: |
+    Challeng is the communication between microservices initialy a Async or synchronouse apporach has to be decided.
+    synchronous (http/gRPC) blocking request response
+    Asynchronous sends a response and doesnt wait for the reply implementation as one-to-one(queue) mode or one-to-many (topic) mode
+    http easier than grpc but worse performance
+    Public APIs which is APIs calls from the client applications. Backend APIs which is used for inter-service communication between backend microservices.
+    Public APIs, whether for web browsers or mobile applications, should align with client requests, utilizing RESTful APIs over HTTP protocol with JSON payloads for ease of verification and agreement with clients
+    Features of REST :     Stateless, Uniform Interface, Cacheable, Client-Server, Layered System, Code on Demand
+    HTTP Methods
+    GET -> The GET method is used to fetch the resource specified in the URI. There is no body in this request.
+    It’s just the header. It is used for data listing and display operations. Requests made with GET must be secure. 
+    When data is sent with GET, it is sent in the address bar.
+    POST -> We use the POST method to create a new resource on the server. We send the request in order to run the controller resources and to send the form inputs. 
+    Since we will send data for all these operations, we also send the body when using the POST method. It is used to add data and update existing data. 
+    Data is not displayed in the address bar, unlike the GET method.
+    PUT -> The PUT method has a usage area similar to the POST method. A resource is sent with the body and if the URI points to an existing resource, that resource is updated. 
+    It is used to update data. Different from the POST method, the result is the same even if the request is repeated multiple times.
+    DELETE -> As the name suggests, it is the request sent to delete the resource specified in the URI. It is only used to delete the relevant resource and never be accessed again.
+    PATCH -> Used to update a single piece of data.
+    gRPC is a RPC framework that uses HTTP/2 to send binary messages using Protocol Buffers define interfaces for communicatin language-agnostic
+    gRPC, akin to many RPC systems, revolves around defining services with callable remote methods; servers implement the service interface, while clients use stubs mirroring server methods.
+    It supports communication between clients and servers across various environments and languages, allowing flexibility in development, such as creating a gRPC server in Java or C# with clients in Go, Python, or Ruby.
+    gRPC offers higher performance and reduced bandwidth usage compared to JSON serialization through its use of HTTP/2 and binary serialization, while also supporting multi-language/platform, being open source with a robust community, facilitating bi-directional streaming operations, and providing support for SSL/TLS usage and various authentication methods.
+    Usecases synchrounous backend, Polyglot env (multiple languages), low latency high performance, networc constrains as payload is smaller
+    Use API Gateway to expose the services to the public and provide security
+
+- title: Protocol Buffers
+  url: https://developers.google.com/protocol-buffers/docs/overview
+
+- title: Implementation of Asynchronous Microservices Architecture on Smart Village Application
+  url: https://www.researchgate.net/publication/361620172_Implementation_of_Asynchronous_Microservices_Architecture_on_Smart_Village_Application
+  type: paper
+  notes: |
+    Async Patterns: Http as long running jobs using return ID and Polling
+    Messaging using broker as middlemnan 
+    vent-driven communication is a pattern where services interact via events that individual services produce. 
+    Unlike messaging patterns, the consuming service does not need to know the event's details but reacts to events it cares about. This approach, facilitated by message brokers, promotes loose coupling between services as no payload is included in the events.
+    Choreography-based microservice architecture involves a collection of small services, each with a specific function that interacts and shares data. 
+    There are two approaches to unify these services: microservice orchestration, where a central controller handles interactions in a request-response paradigm, and microservices choreography, where each service performs activities independently, broadcasting events in a decentralized manner. 
+    In choreography, services interested in events take action reactively, providing a solution to inter-service interdependence without a central orchestrator.
+    Web Service Implementation Methodology:
+    - Requirement phase
+    - Analysis Phase
+    - Design Phase
+    - Coding Phase
+    - Test Phase
+    - Deployment Phase
+    - Non-Functional Requirements(used componetns, Vue.js, SLIM Framework, MySQL, Swagger, Docker Kong, RabbitMq)
+    - Functional Group defines microservices (Product, Email, Customer, Owner, Order, Payment, Authentication)
+    API Gateway (Kong) is used to keep microservices from being directly consumed by the public, increasing secure.
+
+- title: Microservices and BPM
+  url: https://assets.ctfassets.net/vpidbgnakfvf/1YnPDinYJeqYCEK06k82a6/4dc12579c43b51468603323af0a1ac2f/Microservices_and_BPM.pdf
+  type: paper
+  notes: |
+    Microservice architectures have gained popularity due to the increasing complexity of systems. 
+    They involve breaking down the overall system into individual microservices, each focused on a specific business capability, which contrasts with Service Oriented Architecture (SOA). 
+    Unlike SOA, microservices prioritize team organization and the independent exchangeability of components. Microservices address the challenge of scaling software development by aligning software structure with team structure, following Conway's Law. 
+    The approach involves defining services and team boundaries around meaningful business or domain capabilities (Bounded Context), allowing each team autonomy within their context and reducing coordination efforts, resulting in a flexible organization.
+    Guidelines for createing Microservices: Independent life cycle, Stable Interfaces, Communication, Robustness and fault tolerance, Local data storage, Independent scalability
+    Long running processes require state to function
+
+- title: Patterns for Serverless Functions (Function-as-a-Service) A Multivocal Literature Review
+  url: https://www.researchgate.net/publication/340121613_Patterns_for_Serverless_Functions_Function-as-a-Service_A_Multivocal_Literature_Review
+  type: paper
+  notes: |
+    Serverless computing is a  paradigm that allows users to develop and deploy applications without managing infrastructure focusing purely on business logic.
+    FaaS development of sort running functions (methode with in and output) on demand execution and billing.
+    Lack of patterns for serverless funcion
+    white literature -> Peer-reviewed papers grey literature (i.e., blog posts, industrial whitepapers, books and practitioner’s talks)
+    Design patterns exist for Object oriented  architectures, Service orientet microservices and others.
+    Multivocal Literature Review (MLR) is a type of literature review that considers not only academic and peer-reviewed literature, rather, it includes also practi-tioners’ opinions and literature produced by industrial professional
+    white literature IEEExplore, Springer Link, Google Scholar, ACM, Science Direct and Scopus.
+    Orchestration and Aggregation: aggregator , data lake fan in fan out, function chaining, proxy, frugal consumer, internal api, robust API, router, Thick Client, State machine.
+    Event management patterns: Responsibility Segregation, The Internal Hand-off, Periodic Invoker, Polling Event Processor
+    Availability Patterns: Bulkhead, Circuit breaker, Compiled Functions, Function warmer, Oversized Function, Read-heavy report engine, The Eventually Consistent, Timeout,
+    Communiction Patterns: Data Streaming, Externalized state, Publish/Subscribe
+    Authorization Patterns: The Gatekeepe, Valet key
+
+- title: Flock: Towards Multitasking Virtual Machines for Function-as-a-Service
+  url: https://ieeexplore.ieee.org/document/10159516
+  type:  paper
+  notes: |
+    use containers and vms for workload isolation.
+    A language virtual machine with multi-tasking support is known as a multi-tasking virtual machine used for better performance by using the individual rundtime
+    Flock, an MVM designed for the FaaS scenario: funclet supports rapid start-up by initializing from templates
+    FGroup, which manages funclets into groups and relies on OS services for resource accounting
+    The analysis of existing MVMs to uncover their limitations to support FaaS functions in both abstraction and underlying runtime system (Section II).
+    Flock, a retrofitted MVM for Java FaaS functions, which allows co-executing multiple functions in the same JVM with FaaS-oriented performance optimizations and runtime support for isolation (Section IV).
+    Performance evaluation on various Java FaaS functions to confirm Flock can improve the performance while pre-serving the isolation among functions for FaaS platforms
