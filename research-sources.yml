@@ -154,7 +154,7 @@
     Communiction Patterns: Data Streaming, Externalized state, Publish/Subscribe
     Authorization Patterns: The Gatekeepe, Valet key
 
-- title: Flock: Towards Multitasking Virtual Machines for Function-as-a-Service
+- title: Flock Towards Multitasking Virtual Machines for Function-as-a-Service
   url: https://ieeexplore.ieee.org/document/10159516
   type:  paper
   notes: |
@@ -165,3 +165,35 @@
     The analysis of existing MVMs to uncover their limitations to support FaaS functions in both abstraction and underlying runtime system (Section II).
     Flock, a retrofitted MVM for Java FaaS functions, which allows co-executing multiple functions in the same JVM with FaaS-oriented performance optimizations and runtime support for isolation (Section IV).
     Performance evaluation on various Java FaaS functions to confirm Flock can improve the performance while pre-serving the isolation among functions for FaaS platforms
+
+- title: "tinyFaaS: A Lightweight FaaS Platform for Edge Environments"
+  url: https://ieeexplore.ieee.org/document/9103476
+  type: paper
+  notes: |
+    Functions let code be executed respnding to events. vent queuing,underlying infrastructure, dynamic scaling, and dispatching are all handled by the cloud provider
+    Psitioning Functions on the endge improves performance reduces latancy and increaces transparancy.
+    tineFaas vs Kubeless and Lean OpenWhisk
+    At its core, a FaaS platform should be able to run custom application code in response to a network reques. Low overhead most should come form customer code 
+    focus on mqtt as messaging protocol and technologie has to be Open
+    each function container can recive multiple requests everything is controled using a management componetn reverse proxy in go using go-coap and docker-py to interacti with docker-py
+
+- title: "Cold Start in Serverless Computing: Current Trends and Mitigation Strategies"
+  url: https://ieeexplore.ieee.org/document/9191377
+  type: paper
+  notes: |
+    At the lowest level of abstraction, Infrastructure as a Service (IaaS) is introduced whereby, fundamental processing resources such as provision processing, storage and networks are provided to the customer. At a higher level, 
+    the Platform as a Service (PaaS) provides an application development environment to developers and at the highest level,
+    Software as a Service (SaaS), where an entire software system is hosted by the cloud provider.
+    developer only focuses on program logic and writing functions, and the full stack management of the software is delegated to the cloud provider
+    The advantages of Serverless computing are reducing operational costs, resource consumption, product launch time, and ease of application development.
+    monlith -> microservice -> function
+     the first approach tries to minimize the cold start delay (Optimizing Environments), 
+    and the second approach minimizes the frequency of cold start occurrence (Pinging).
+    The text discusses various approaches to reduce container preparation delay in serverless computing environments.
+    One method involves running one container continuously per function, but it results in increased CPU and memory overhead and higher costs during idle periods. 
+    Another approach, employed by OpenWhisk and OpenLambda platforms, involves pausing containers after execution to reduce cold start delays. 
+    Fission and Knative Platforms use a pool of always running containers, improving efficiency but at the expense of cost and resource effectiveness. 
+    Google Cloud Functions and AWS Lambda keep containers warm after execution to respond quickly to subsequent requests, but this leads to potential resource wastage. 
+    A two-queue system presented in a paper assigns warm containers first, but resource consumption is suboptimal. Lastly, a platform called SAND introduces application-level sandboxing, 
+    isolating logic at the application level, with advantages including lower delay for creating new processes and efficient use of shared libraries between functions on the same container.
+    resources improve performance

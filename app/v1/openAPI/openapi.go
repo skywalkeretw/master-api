@@ -132,3 +132,20 @@ func GetSwaggerCodegenHelp() {
 		fmt.Println(err.Error())
 	}
 }
+
+// func CreateOpenAPISpec(outDirPath string) OpenAPI {
+// 	openAPISpec := OpenAPI{
+// 		Openapi: "3.0.0",
+// 		Info: Info{
+// 			Title:   "",
+// 			Version: "1.0.0",
+// 		},
+// 		Servers: []Server{
+// 			{},
+// 		},
+// 		Paths: {
+// 			{"/", Path{}},
+// 		},
+// 	}
+// 	return openAPISpec
+// }
