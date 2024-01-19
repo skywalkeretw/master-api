@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: registry:2
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "2048Mi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 5000
+        # env:
+        # - name: REGISTRY_HTTP_DISABLE_AUTH
+        #   value: "true"
+        # - name: REGISTRY_HTTP_TLS_CERTIFICATE
+        #   value: /tmp/certificate/tls.crt
+        # - name: REGISTRY_HTTP_TLS_KEY
+        volumeMounts:
+          - name: tls
+            mountPath: /tmp/certificate
+      volumes:
+      - name: tls
+        secret:
+          secretName: registry-tls
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: registry
+  name: registry
+  namespace: default
+spec:
+  selector:
+    app: registry
+  ports:
+    - protocol: TCP
+      nodePort: 30952
+      port: 5000 #30952
+#      targetPort: 5000
+  type: NodePort

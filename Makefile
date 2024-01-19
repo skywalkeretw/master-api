@@ -6,7 +6,7 @@ SWAG_DIR := ./docs
 KIND_CONFIG := ./deployment/kind-config.yml
 
 # Define the Kind cluster name.
-KIND_CLUSTER_NAME := my-kind-cluster
+KIND_CLUSTER_NAME := master
 
 # Define Go related variables.
 GO := go
@@ -30,7 +30,7 @@ DOCKER_IMAGE_TAG := v1
 DOCKER_BUILD_ARGS := -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Define the path to your Kubernetes manifests directory.
-KUBE_MANIFESTS := deployment/api.yml
+API_DEPLOYMENT := deployment/api.yml
 
 # Default target to build and run your Go application.
 .PHONY: run
@@ -49,11 +49,10 @@ swagger:
 
 # Target to create a Kind cluster with the specified name and configuration.
 .PHONY: create-cluster
-create-cluster: docker-build create-kind-cluster deploy-api
+create-cluster: create-kind-cluster deploy-rabbitmq docker-build-load deploy-api
 
 create-kind-cluster:
-	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
-	kind load docker-image --name $(KIND_CLUSTER_NAME) $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	./deployment/deploy-cluster.sh
 
 # Target to delete the Kind cluster with the specified name.
 .PHONY: delete-cluster
@@ -72,12 +71,19 @@ docker-build-load: docker-build
 # Target to apply Kubernetes manifests using kubectl.
 .PHONY: deploy-api
 deploy-api:
-	kubectl apply -f $(KUBE_MANIFESTS)
+	kubectl apply -f $(API_DEPLOYMENT)
 
-.PHONY: rabbitmq
-rabbitmq:
+.PHONY: deploy-rabbitmq
+deploy-rabbitmq:
 	kubectl apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
-	kubectl apply -f deployment/rabbitmq.yml
+	kubectl apply -f https://raw.githubusercontent.com/rabbitmq/cluster-operator/main/docs/examples/hello-world/rabbitmq.yaml
+
+
+# Target to apply Kubernetes manifests using kubectl.
+.PHONY: deploy-registry
+deploy-registry:
+	pwd
+	./deployment/deploy-registry.sh ${KIND_CLUSTER_NAME}
 
 # Target to run tests for your Go application.
 .PHONY: test
