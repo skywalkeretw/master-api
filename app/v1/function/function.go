@@ -20,11 +20,16 @@ func CreateFunction(functionData CreateFunctionHandlerData) {
 	// Increment the WaitGroup counter for each goroutine
 	wg.Add(2)
 
-	OpenAPISpecData := openapi.OpenAPISpecData{}
+	OpenAPISpecData := openapi.OpenAPISpecData{
+		Name:            functionData.Name,
+		Description:     functionData.Description,
+		InputParameters: functionData.InputParameters,
+		ReturnValue:     functionData.ReturnValue,
+	}
 	// Create OpenAPI file
 	go func() {
 		defer wg.Done()
-		openapi.CreateOPenAPISpec(OpenAPISpecData)
+		openapi.CreateOpenAPISpec(OpenAPISpecData)
 
 		//firstFunction()
 	}()

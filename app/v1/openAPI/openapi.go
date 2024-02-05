@@ -198,7 +198,7 @@ type OpenAPISpecData struct {
 	ReturnValue     string `json:"returnvalue" binding:"required"`
 }
 
-func CreateOPenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
+func CreateOpenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
 
 	requestBody := &RequestBody{}
 	if true {
@@ -206,7 +206,7 @@ func CreateOPenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
 			requestBody = &RequestBody{
 				Description: functionData.Description,
 				Content: map[string]MediaType{
-					"application/json": {Schema: Schema{}},
+					"application/json": {Schema: generateSchema(functionData.InputParameters)},
 				},
 				Required: true,
 			}
@@ -218,19 +218,11 @@ func CreateOPenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
 	var responses map[string]Response
 	if utils.IsJSONObject(functionData.ReturnValue) {
 		if utils.IsJSONObject(functionData.ReturnValue) {
-			returnMap, err := utils.JsonToMap(functionData.ReturnValue)
-			if err != nil {
-				fmt.Println("failed to retuen map")
-			}
-			generateSchema(returnMap)
 			responses = map[string]Response{
 				"200": {
 					Description: functionData.Description,
 					Content: map[string]MediaType{
-						"application/json": {Schema: Schema{
-							Type:       "object",
-							Properties: map[string]Schema{},
-						}},
+						"application/json": {Schema: generateSchema(functionData.ReturnValue)},
 					},
 				},
 			}
@@ -270,26 +262,40 @@ func CreateOPenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
 	return openAPISpec, nil
 }
 
-func generateSchema(returnMap map[string]interface{}) Schema {
-	schema := Schema{
-		Type:       "object",
-		Properties: make(map[string]Schema),
-	}
+func generateSchema(dataString string) Schema {
+	schema := Schema{}
 
-	for key, inputType := range returnMap {
-		strType, err := isValidOpenAPIType(inputType)
+	if utils.IsJSONObject(dataString) {
+		dataMap, err := utils.JsonToMap(dataString)
 		if err != nil {
-			// Handle error (printing or logging)
-			fmt.Println("Error:", err)
-			continue
+			fmt.Println("error converting Json string to Map", err.Error())
 		}
 
-		if strType != "object" {
-			schema.Properties[key] = Schema{Type: strType}
-		} else {
-			// Recursively handle object type
-			subSchema := generateSchema(map[string]interface{key: inputType}) // Replace with your logic
-			schema.Properties[key] = subSchema
+		for key, inputType := range dataMap {
+			inputTypeStr := fmt.Sprintf("%v", inputType)
+			strType, err := isValidOpenAPIType(inputTypeStr)
+			if err != nil {
+				fmt.Println("Error:", err)
+				continue
+			}
+
+			if strType != "object" {
+				schema.Properties[key] = Schema{Type: strType}
+			} else {
+				schema.Type = "object"
+				// Recursively handle object type
+				subSchema := generateSchema(inputTypeStr) // Replace with your logic
+				schema.Properties[key] = subSchema
+			}
+		}
+	} else {
+		strType, err := isValidOpenAPIType(dataString)
+		if err != nil {
+			fmt.Println("error checking open api type")
+		}
+
+		schema = Schema{
+			Type: strType,
 		}
 	}
 

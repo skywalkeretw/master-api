@@ -14,8 +14,8 @@ type CreateFunctionHandlerData struct {
 	Description     string        `json:"description" binding:"required"`
 	Language        string        `json:"language" binding:"required"`
 	SourceCode      string        `json:"sourcecode" binding:"required"`
-	InputParameters interface{}   `json:"inputparameters" binding:"required"`
-	ReturnValue     interface{}   `json:"returnvalue" binding:"required"`
+	InputParameters string        `json:"inputparameters" binding:"required"`
+	ReturnValue     string        `json:"returnvalue" binding:"required"`
 	FunctionModes   FunctionModes `json:"functionmodes" binding:"required"`
 }
 
