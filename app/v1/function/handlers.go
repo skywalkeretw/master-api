@@ -10,12 +10,20 @@ import (
 // @Summary Create Function Data
 // @Description Represents data for creating a function
 type CreateFunctionHandlerData struct {
-	Name        string      `json:"name" binding:"required"`
-	Description string      `json:"Description" binding:"required"`
-	Language    string      `json:"language" binding:"required"`
-	Input       interface{} `json:"input" binding:"required"`
-	Output      interface{} `json:"output" binding:"required"`
-	SourceCode  string      `json:"sourcecode" binding:"required"`
+	Name            string        `json:"name" binding:"required"`
+	Description     string        `json:"description" binding:"required"`
+	Language        string        `json:"language" binding:"required"`
+	SourceCode      string        `json:"sourcecode" binding:"required"`
+	InputParameters interface{}   `json:"inputparameters" binding:"required"`
+	ReturnValue     interface{}   `json:"returnvalue" binding:"required"`
+	FunctionModes   FunctionModes `json:"functionmodes" binding:"required"`
+}
+
+type FunctionModes struct {
+	HTTPSync       bool `json:"httpsync" binding:"required"`
+	HTTPAsync      bool `json:"httpasync" binding:"required"`
+	MessagingSync  bool `json:"messagingsync" binding:"required"`
+	MessagingAsync bool `json:"messagingasync" binding:"required"`
 }
 
 // @Summary Create a new Function
@@ -35,6 +43,8 @@ func CreateFunctionHandler(ctx *gin.Context) {
 	if validateAllowedLanguages(data.Language) {
 		ctx.AbortWithError(http.StatusForbidden, fmt.Errorf("unsupported language: %s", data.Language))
 	}
+
+	CreateFunction(data)
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 

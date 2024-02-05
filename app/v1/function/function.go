@@ -5,9 +5,10 @@ import (
 	"sync"
 
 	"github.com/skywalkeretw/master-api/app/utils"
+	openapi "github.com/skywalkeretw/master-api/app/v1/openAPI"
 )
 
-func CreateFunction() {
+func CreateFunction(functionData CreateFunctionHandlerData) {
 	// Create a WaitGroup to wait for goroutines to finish
 	var wg sync.WaitGroup
 
@@ -19,9 +20,12 @@ func CreateFunction() {
 	// Increment the WaitGroup counter for each goroutine
 	wg.Add(2)
 
-	// Create AsyncAPI file
+	OpenAPISpecData := openapi.OpenAPISpecData{}
+	// Create OpenAPI file
 	go func() {
 		defer wg.Done()
+		openapi.CreateOPenAPISpec(OpenAPISpecData)
+
 		//firstFunction()
 	}()
 

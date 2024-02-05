@@ -26,7 +26,7 @@ WORKDIR /bin
 #     npm install -g @asyncapi/cli
 
 RUN apt update && apt install -y curl && curl -sL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt install -y nodejs && node --version && npm --version &&
+RUN apt install -y nodejs
 
 RUN apt update && apt install -y software-properties-common && \
     add-apt-repository ppa:openjdk-r/ppa -y && \

@@ -3,6 +3,7 @@ package openapi
 import (
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 )
@@ -69,4 +70,37 @@ func GenerateClient(swaggerSpecPath, language string) (string, error) {
 		// return "", err
 	}
 	return zipPath, nil
+}
+
+// getStringFromInterface checks if the interface contains a string of a valid OpenAPI type and returns it
+func isValidOpenAPIType(data interface{}) (string, error) {
+	value := reflect.ValueOf(data)
+
+	// Check if the value is a string
+	if value.Kind() != reflect.String {
+		return "", fmt.Errorf("input is not a string")
+	}
+
+	// Get the string value
+	strValue := value.String()
+
+	if utils.IsJSONObject(strValue) {
+		strValue = "object"
+	}
+	// Check if the string is a valid OpenAPI type
+	openAPITypes := map[string]bool{
+		"string":  true,
+		"number":  true,
+		"integer": true,
+		"boolean": true,
+		"array":   true,
+		"object":  true,
+	}
+
+	_, valid := openAPITypes[strValue]
+	if !valid {
+		return "", fmt.Errorf("'%s' is not a valid OpenAPI type", strValue)
+	}
+
+	return strValue, nil
 }

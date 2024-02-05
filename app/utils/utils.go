@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -136,4 +137,32 @@ func TransformTitle2FilenamePath(input ...string) string {
 func Int32Ptr(i int) *int32 {
 	i32 := int32(i)
 	return &i32
+}
+
+func IsJSONObject(input string) bool {
+	var jsonObject map[string]interface{}
+	err := json.Unmarshal([]byte(input), &jsonObject)
+	return err == nil
+}
+
+func JsonToMap(jsonString string) (map[string]interface{}, error) {
+	var result map[string]interface{}
+	err := json.Unmarshal([]byte(jsonString), &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// truncateString truncates the input string to a maximum of 120 characters followed by ellipsis
+func TruncateString(input string) string {
+	const maxChars = 120
+
+	if utf8.RuneCountInString(input) <= maxChars {
+		return input
+	}
+
+	// Truncate to 120 characters and add ellipsis
+	runes := []rune(input[:maxChars])
+	return string(runes) + "..."
 }
