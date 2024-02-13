@@ -1,48 +1,61 @@
 package function
 
 import (
+	"encoding/json"
 	"fmt"
-	"sync"
 
-	"github.com/skywalkeretw/master-api/app/utils"
+	asyncapi "github.com/skywalkeretw/master-api/app/v1/asyncAPI"
 	openapi "github.com/skywalkeretw/master-api/app/v1/openAPI"
+	"github.com/skywalkeretw/master-api/app/v1/rabbitmq"
 )
 
 func CreateFunction(functionData CreateFunctionHandlerData) {
-	// Create a WaitGroup to wait for goroutines to finish
-	var wg sync.WaitGroup
-
-	tempDirPath, err := utils.GenerateTempFolder()
-	if err != nil {
-		// handle error
+	var err error
+	buildDeployData := rabbitmq.FunctionBuildDeployData{
+		Name:       functionData.Name,
+		Language:   functionData.Language,
+		SourceCode: functionData.SourceCode,
 	}
-	fmt.Println(tempDirPath)
 	// Increment the WaitGroup counter for each goroutine
-	wg.Add(2)
 
-	OpenAPISpecData := openapi.OpenAPISpecData{
+	openAPISpecData := openapi.OpenAPISpecData{
 		Name:            functionData.Name,
 		Description:     functionData.Description,
 		InputParameters: functionData.InputParameters,
 		ReturnValue:     functionData.ReturnValue,
 	}
 	// Create OpenAPI file
-	go func() {
-		defer wg.Done()
-		openapi.CreateOpenAPISpec(OpenAPISpecData)
+	openAPISpec, err := openapi.CreateOpenAPISpec(openAPISpecData)
+	if err != nil {
+		fmt.Println("Error creating OpenAPI Specification: ", err.Error())
+	}
 
-		//firstFunction()
-	}()
-
+	asyncAPISpecData := asyncapi.AsyncAPISpecData{
+		Name:            functionData.Name,
+		Description:     functionData.Description,
+		InputParameters: functionData.InputParameters,
+		ReturnValue:     functionData.ReturnValue,
+	}
 	// Create AsyncAPI file
-	go func() {
-		defer wg.Done()
-		//secondFunction()
-	}()
+	asyncAPISpec, err := asyncapi.CreateAsyncAPISpec(asyncAPISpecData)
+	if err != nil {
+		fmt.Println("Error creating AsyncAPI Specification: ", err.Error())
+	}
 
-	// Wait for both goroutines to finish
-	wg.Wait()
+	openAPISpecBytes, err := json.Marshal(openAPISpec)
+	if err != nil {
+		fmt.Println("Error marshalling OpenAPI Specification JSON: ", err.Error())
+	}
+	buildDeployData.OpenAPIJSON = string(openAPISpecBytes)
 
+	asyncAPISpecBytes, err := json.Marshal(asyncAPISpec)
+	if err != nil {
+		fmt.Println("Error marshalling AsyncAPI Specification JSON: ", err.Error())
+	}
+	buildDeployData.AsyncAPIJSON = string(asyncAPISpecBytes)
 	// Continue with the next command or operation
 	fmt.Println("Both functions have completed.")
+	fmt.Println(buildDeployData)
+	rabbitmq.RPCclient(buildDeployData)
+
 }

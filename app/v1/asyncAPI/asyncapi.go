@@ -3,9 +3,9 @@ package asyncapi
 // AsyncAPI represents the AsyncAPI specification.
 type AsyncAPI struct {
 	Asyncapi     string                 `json:"asyncapi"`
-	Id           string                 `json:"id,omitempty"`
+	Id           string                 `json:"id,omitempty"` //"urn:example:com:smartylighting:streetlights:server"
 	Info         AsyncAPIInfo           `json:"info"`
-	Servers      []Server               `json:"servers,omitempty"`
+	Servers      map[string]Server      `json:"servers,omitempty"`
 	Channels     map[string]Channel     `json:"channels"`
 	Components   AsyncAPIComponents     `json:"components,omitempty"`
 	ExternalDocs ExternalDocs           `json:"externalDocs,omitempty"`
@@ -26,6 +26,7 @@ type AsyncAPIInfo struct {
 // Server represents a server in the AsyncAPI specification.
 type Server struct {
 	URL         string                    `json:"url"`
+	Protocol    string                    `json:"protocol"`
 	Description string                    `json:"description,omitempty"`
 	Variables   map[string]ServerVariable `json:"variables,omitempty"`
 }
@@ -39,9 +40,11 @@ type ServerVariable struct {
 
 // Channel represents a channel in the AsyncAPI specification.
 type Channel struct {
-	Subscribe Operation `json:"subscribe,omitempty"`
-	Publish   Operation `json:"publish,omitempty"`
-	// Add other channel operations (parameters, etc.) as needed
+	Address   string     `json:"address,omitempty"`
+	Subscribe Operation  `json:"subscribe,omitempty"`
+	Publish   Operation  `json:"publish,omitempty"`
+	Request   *Operation `json:"request,omitempty"`
+	Response  *Operation `json:"response,omitempty"`
 }
 
 // AsyncAPIComponents represents the components section in the AsyncAPI specification.
@@ -84,4 +87,36 @@ type Contact struct {
 type License struct {
 	Name string `json:"name"`
 	URL  string `json:"url,omitempty"`
+}
+
+type AsyncAPISpecData struct {
+	Name            string `json:"name" binding:"required"`
+	Description     string `json:"description" binding:"required"`
+	InputParameters string `json:"inputparameters" binding:"required"`
+	ReturnValue     string `json:"returnvalue" binding:"required"`
+}
+
+func CreateAsyncAPISpec(functionData AsyncAPISpecData) (AsyncAPI, error) {
+	asyncAPISpec := AsyncAPI{
+		Asyncapi: "3.0.0",
+		Info: AsyncAPIInfo{
+			Title:       functionData.Name,
+			Version:     "1.0.0",
+			Description: functionData.Description,
+		},
+		Servers: map[string]Server{
+			"local": {
+				URL:      "",
+				Protocol: "amqp",
+			},
+		},
+		Channels: map[string]Channel{
+			"func-xxx-input-channel": {
+				Address: "",
+			},
+			"func-xxx-output-channel": {},
+		},
+	}
+
+	return asyncAPISpec, nil
 }

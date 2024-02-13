@@ -44,8 +44,8 @@ func CreateFunctionHandler(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusForbidden, fmt.Errorf("unsupported language: %s", data.Language))
 	}
 
-	CreateFunction(data)
-	ctx.JSON(http.StatusOK, gin.H{})
+	go CreateFunction(data)
+	ctx.JSON(http.StatusOK, gin.H{"msg": "Your Function is beeing Processed"})
 }
 
 // Custom validation function for allowed languages
