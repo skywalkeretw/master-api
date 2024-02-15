@@ -1,5 +1,10 @@
 package asyncapi
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // AsyncAPI represents the AsyncAPI specification.
 type AsyncAPI struct {
 	Asyncapi     string                 `json:"asyncapi"`
@@ -96,7 +101,7 @@ type AsyncAPISpecData struct {
 	ReturnValue     string `json:"returnvalue" binding:"required"`
 }
 
-func CreateAsyncAPISpec(functionData AsyncAPISpecData) (AsyncAPI, error) {
+func CreateAsyncAPISpec(functionData AsyncAPISpecData) (string, error) {
 	asyncAPISpec := AsyncAPI{
 		Asyncapi: "3.0.0",
 		Info: AsyncAPIInfo{
@@ -118,5 +123,9 @@ func CreateAsyncAPISpec(functionData AsyncAPISpecData) (AsyncAPI, error) {
 		},
 	}
 
-	return asyncAPISpec, nil
+	asyncAPISpecBytes, err := json.Marshal(asyncAPISpec)
+	if err != nil {
+		return "", fmt.Errorf("Error marshalling AsyncAPI Specification JSON: %v", err.Error())
+	}
+	return string(asyncAPISpecBytes), nil
 }

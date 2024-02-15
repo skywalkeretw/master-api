@@ -7,5 +7,4 @@ import (
 
 func AttatchMiddleware(router *gin.Engine) {
 	router.Use(cors.Default())
-
 }

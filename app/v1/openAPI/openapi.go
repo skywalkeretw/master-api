@@ -1,6 +1,7 @@
 package openapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -198,12 +199,12 @@ type OpenAPISpecData struct {
 	ReturnValue     string `json:"returnvalue" binding:"required"`
 }
 
-func CreateOpenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
+func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 
-	requestBody := &RequestBody{}
-	if true {
+	requestBody := RequestBody{}
+	if functionData.InputParameters != "" {
 		if utils.IsJSONObject(functionData.InputParameters) {
-			requestBody = &RequestBody{
+			requestBody = RequestBody{
 				Description: functionData.Description,
 				Content: map[string]MediaType{
 					"application/json": {Schema: generateSchema(functionData.InputParameters)},
@@ -211,30 +212,33 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
 				Required: true,
 			}
 		} else {
-			return OpenAPI{}, fmt.Errorf("unsopported format create a correct json file")
+			return "", fmt.Errorf("unsopported format create a correct json file")
 		}
 	}
 
 	var responses map[string]Response
 	if utils.IsJSONObject(functionData.ReturnValue) {
-		if utils.IsJSONObject(functionData.ReturnValue) {
-			responses = map[string]Response{
-				"200": {
-					Description: functionData.Description,
-					Content: map[string]MediaType{
-						"application/json": {Schema: generateSchema(functionData.ReturnValue)},
-					},
+		// If the return value is a JSON object
+		responses = map[string]Response{
+			"200": {
+				Description: functionData.Description,
+				Content: map[string]MediaType{
+					"application/json": {Schema: generateSchema(functionData.ReturnValue)},
 				},
-			}
-		} else {
-			if true {
-
-			} else {
-				return OpenAPI{}, fmt.Errorf("")
-			}
-
+			},
 		}
-
+	} else {
+		// If the return value is a string, number, or bool
+		responses = map[string]Response{
+			"200": {
+				Description: functionData.Description,
+				Content: map[string]MediaType{
+					"application/json": {Schema: Schema{Type: functionData.ReturnValue}}, // Example for a string response, modify as needed
+					// For number: Schema{Type: "number"}
+					// For bool: Schema{Type: "boolean"}
+				},
+			},
+		}
 	}
 
 	openAPISpec := OpenAPI{
@@ -252,23 +256,29 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (OpenAPI, error) {
 				Post: &Operation{
 					Summary:     utils.TruncateString(functionData.Description),
 					Description: functionData.Description,
-					RequestBody: requestBody,
+					RequestBody: &requestBody,
 					Responses:   responses,
 				},
 			},
 		},
 	}
-
-	return openAPISpec, nil
+	openAPISpecBytes, err := json.Marshal(openAPISpec)
+	if err != nil {
+		fmt.Println("Error marshalling OpenAPI Specification JSON: ", err.Error())
+	}
+	return string(openAPISpecBytes), nil
 }
 
 func generateSchema(dataString string) Schema {
-	schema := Schema{}
+	schema := Schema{
+		Properties: make(map[string]Schema), // Initialize Properties map
+	}
 
 	if utils.IsJSONObject(dataString) {
 		dataMap, err := utils.JsonToMap(dataString)
 		if err != nil {
 			fmt.Println("error converting Json string to Map", err.Error())
+			return schema // Return empty schema on error
 		}
 
 		for key, inputType := range dataMap {
@@ -282,9 +292,8 @@ func generateSchema(dataString string) Schema {
 			if strType != "object" {
 				schema.Properties[key] = Schema{Type: strType}
 			} else {
-				schema.Type = "object"
 				// Recursively handle object type
-				subSchema := generateSchema(inputTypeStr) // Replace with your logic
+				subSchema := generateSchema(inputTypeStr)
 				schema.Properties[key] = subSchema
 			}
 		}
@@ -292,11 +301,10 @@ func generateSchema(dataString string) Schema {
 		strType, err := isValidOpenAPIType(dataString)
 		if err != nil {
 			fmt.Println("error checking open api type")
+			return schema // Return empty schema on error
 		}
 
-		schema = Schema{
-			Type: strType,
-		}
+		schema.Type = strType
 	}
 
 	return schema

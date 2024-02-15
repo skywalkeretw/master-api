@@ -35,12 +35,11 @@ type FunctionModes struct {
 // @Router /api/v1/function [post]
 func CreateFunctionHandler(ctx *gin.Context) {
 	var data CreateFunctionHandlerData
-
 	// Bind the JSON data from the request body to the updateOptions struct
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 	}
-	if validateAllowedLanguages(data.Language) {
+	if !validateAllowedLanguages(data.Language) {
 		ctx.AbortWithError(http.StatusForbidden, fmt.Errorf("unsupported language: %s", data.Language))
 	}
 
@@ -50,7 +49,7 @@ func CreateFunctionHandler(ctx *gin.Context) {
 
 // Custom validation function for allowed languages
 func validateAllowedLanguages(language string) bool {
-	allowedLanguages := []string{"go", "python", "nodejs"}
+	allowedLanguages := []string{"golang", "python", "javascript"}
 	for _, allowed := range allowedLanguages {
 		if language == allowed {
 			return true
