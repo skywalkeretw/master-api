@@ -1,6 +1,7 @@
 package openapi
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -266,7 +267,8 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 	if err != nil {
 		fmt.Println("Error marshalling OpenAPI Specification JSON: ", err.Error())
 	}
-	return string(openAPISpecBytes), nil
+
+	return string(base64.StdEncoding.EncodeToString(openAPISpecBytes)), nil
 }
 
 func generateSchema(dataString string) Schema {

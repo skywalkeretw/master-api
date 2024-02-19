@@ -20,10 +20,10 @@ type CreateFunctionHandlerData struct {
 }
 
 type FunctionModes struct {
-	HTTPSync       bool `json:"httpsync" binding:"required"`
-	HTTPAsync      bool `json:"httpasync" binding:"required"`
-	MessagingSync  bool `json:"messagingsync" binding:"required"`
-	MessagingAsync bool `json:"messagingasync" binding:"required"`
+	HTTPSync       bool `json:"httpsync"`
+	HTTPAsync      bool `json:"httpasync"`
+	MessagingSync  bool `json:"messagingsync"`
+	MessagingAsync bool `json:"messagingasync"`
 }
 
 // @Summary Create a new Function

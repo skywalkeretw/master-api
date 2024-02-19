@@ -2,8 +2,10 @@ package function
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
+	asyncapi "github.com/skywalkeretw/master-api/app/v1/asyncAPI"
 	openapi "github.com/skywalkeretw/master-api/app/v1/openAPI"
 	"github.com/skywalkeretw/master-api/app/v1/rabbitmq"
 )
@@ -25,6 +27,29 @@ func CreateFunction(functionData CreateFunctionHandlerData) {
 	}
 	inputParameters := string(decodedInputParametersBytes)
 
+	var data map[string]string
+	err = json.Unmarshal(decodedInputParametersBytes, &data)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	numEntries := len(data)
+	i := 0
+	var callStr string
+	for key, value := range data {
+		i++
+		if functionData.Language == "golang" {
+			callStr = fmt.Sprintf("%srb[\"%s\"].(%s)", callStr, key, value)
+		} else {
+			callStr = fmt.Sprintf("%srb[\"%s\"]", callStr, key)
+		}
+		if i < numEntries {
+			callStr = fmt.Sprintf("%s, ", callStr)
+		}
+
+	}
+	buildDeployData.FuncInput = callStr
 	decodedReturnValueBytes, err := base64.StdEncoding.DecodeString(functionData.ReturnValue)
 	if err != nil {
 		fmt.Println("Error decoding  return value: ", err)
@@ -43,17 +68,17 @@ func CreateFunction(functionData CreateFunctionHandlerData) {
 		fmt.Println("Error creating OpenAPI Specification: ", err.Error())
 	}
 
-	// asyncAPISpecData := asyncapi.AsyncAPISpecData{
-	// 	Name:            functionData.Name,
-	// 	Description:     functionData.Description,
-	// 	InputParameters: inputParameters,
-	// 	ReturnValue:     returnValue,
-	// }
-	// // Create AsyncAPI file
-	// buildDeployData.AsyncAPIJSON, err = asyncapi.CreateAsyncAPISpec(asyncAPISpecData)
-	// if err != nil {
-	// 	fmt.Println("Error creating AsyncAPI Specification: ", err.Error())
-	// }
+	asyncAPISpecData := asyncapi.AsyncAPISpecData{
+		Name:            functionData.Name,
+		Description:     functionData.Description,
+		InputParameters: inputParameters,
+		ReturnValue:     returnValue,
+	}
+	// Create AsyncAPI file
+	buildDeployData.AsyncAPIJSON, err = asyncapi.CreateAsyncAPISpec(asyncAPISpecData)
+	if err != nil {
+		fmt.Println("Error creating AsyncAPI Specification: ", err.Error())
+	}
 
 	// Continue with the next command or operation
 

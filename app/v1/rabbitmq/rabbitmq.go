@@ -249,6 +249,7 @@ type FunctionBuildDeployData struct {
 	// InputParameters string                 `json:"inputparameters" binding:"required"`
 	// ReturnValue     string                 `json:"returnvalue" binding:"required"`
 	// FunctionModes function.FunctionModes `json:"functionmodes" binding:"required"`
+	FuncInput    string `json:"fucinput" binding:"required"`
 	OpenAPIJSON  string `json:"openapijson"`
 	AsyncAPIJSON string `json:"asyncapijson"`
 }
@@ -273,13 +274,27 @@ func RPCclient(data FunctionBuildDeployData) {
 	}
 	defer ch.Close()
 
+	// Declare or use existing "imageBuilder" queue
 	_, err = ch.QueueDeclare(
 		"imageBuilder", // name
-		false,          // durable
+		true,           // durable
 		false,          // delete when unused
-		true,           // exclusive
+		false,          // exclusive
 		false,          // noWait
 		nil,            // arguments
+	)
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to declare a queue", err)
+	}
+
+	// Declare or use existing "builtImages" queue
+	_, err = ch.QueueDeclare(
+		"builtImages", // name
+		true,          // durable
+		false,         // delete when unused
+		false,         // exclusive
+		false,         // noWait
+		nil,           // arguments
 	)
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to declare a queue", err)
