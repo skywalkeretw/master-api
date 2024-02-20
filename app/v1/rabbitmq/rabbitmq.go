@@ -1,13 +1,18 @@
 package rabbitmq
 
 import (
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/skywalkeretw/master-api/app/utils"
 )
 
 // import (
@@ -218,4 +223,138 @@ func CreateQueue(queueName string) error {
 
 	fmt.Printf("Queue '%s' created successfully.\n", queueName)
 	return nil
+}
+
+// Handle Sending of Message to builder and recive status that the container has been built
+
+type RabbitMQDial struct {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+}
+
+type ImageData struct {
+	ImageName string `json:"imagename"`
+}
+
+func (r RabbitMQDial) getUrl() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d/", r.UserName, r.Password, r.Host, r.Port)
+}
+
+type FunctionBuildDeployData struct {
+	Name       string `json:"name" binding:"required"`
+	Language   string `json:"language" binding:"required"`
+	SourceCode string `json:"sourcecode" binding:"required"`
+	// InputParameters string                 `json:"inputparameters" binding:"required"`
+	// ReturnValue     string                 `json:"returnvalue" binding:"required"`
+	// FunctionModes function.FunctionModes `json:"functionmodes" binding:"required"`
+	FuncInput    string `json:"fucinput" binding:"required"`
+	OpenAPIJSON  string `json:"openapijson"`
+	AsyncAPIJSON string `json:"asyncapijson"`
+}
+
+func RPCclient(data FunctionBuildDeployData) {
+	log.Println("Start Creation Process for", data.Name)
+	rDial := RabbitMQDial{
+		UserName: utils.GetEnvSting("RABBITMQ_USERNAME", "guest"),
+		Password: utils.GetEnvSting("RABBITMQ_PASSWORD", "guest"),
+		Host:     utils.GetEnvSting("RABBITMQ_HOST", "localhost"),
+		Port:     utils.GetEnvInt("RABBITMQ_PORT", 5672),
+	}
+	conn, err := amqp.Dial(rDial.getUrl())
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to connect to RabbitMQ", err)
+	}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to open a channel", err)
+	}
+	defer ch.Close()
+
+	sendQueue := "imagebuilder"
+	recieveQueue := "builtimages"
+
+	// Declare or use existing "imageBuilder" queue
+	_, err = ch.QueueDeclare(
+		sendQueue, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // noWait
+		nil,       // arguments
+	)
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to declare a queue", err)
+	}
+
+	_, err = ch.QueueDeclare(
+		recieveQueue, // name
+		true,         // durable
+		false,        // delete when unused
+		false,        // exclusive
+		false,        // noWait
+		nil,          // arguments
+	)
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to declare a queue", err)
+	}
+
+	msgs, err := ch.Consume(
+		recieveQueue, // queue
+		"",           // consumer
+		true,         // auto-ack
+		false,        // exclusive
+		false,        // no-local
+		false,        // no-wait
+		nil,          // args
+	)
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to register a consumer", err)
+	}
+
+	corrId := fmt.Sprintf("build-id-%s", uuid.New())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	log.Println("send message")
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatalf("Failed to marshal JSON: %v", err)
+	}
+	err = ch.PublishWithContext(ctx,
+		"",        // exchange
+		sendQueue, // routing key
+		false,     // mandatory
+		false,     // immediate
+		amqp.Publishing{
+			ContentType:   "application/json",
+			CorrelationId: corrId,
+			ReplyTo:       recieveQueue,
+			Body:          jsonData,
+		})
+	if err != nil {
+		log.Panicf("%s: %s", "Failed to publish a message", err)
+	}
+
+	for d := range msgs {
+		fmt.Println("recived: ", d.CorrelationId)
+		if corrId == d.CorrelationId {
+			var imageData ImageData
+			err := json.Unmarshal(d.Body, &imageData)
+			if err != nil {
+				log.Panicf("%s: %s", "Failed To unmarshal", err)
+			}
+			fmt.Println("recived data:")
+			fmt.Println(imageData)
+			// kubernets.CreateKubernetesDeployment("name", "default", 1, v1.PodTemplateSpec{
+			// 	ObjectMeta: v1.PodTemplateSpec{},
+			// })
+			break
+		}
+	}
 }
