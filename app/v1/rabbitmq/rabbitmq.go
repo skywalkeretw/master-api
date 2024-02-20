@@ -255,7 +255,7 @@ type FunctionBuildDeployData struct {
 }
 
 func RPCclient(data FunctionBuildDeployData) {
-	log.Println("Start client")
+	log.Println("Start Creation Process for", data.Name)
 	rDial := RabbitMQDial{
 		UserName: utils.GetEnvSting("RABBITMQ_USERNAME", "guest"),
 		Password: utils.GetEnvSting("RABBITMQ_PASSWORD", "guest"),
@@ -274,40 +274,42 @@ func RPCclient(data FunctionBuildDeployData) {
 	}
 	defer ch.Close()
 
+	sendQueue := "imagebuilder"
+	recieveQueue := "builtimages"
+
 	// Declare or use existing "imageBuilder" queue
 	_, err = ch.QueueDeclare(
-		"imageBuilder", // name
-		true,           // durable
-		false,          // delete when unused
-		false,          // exclusive
-		false,          // noWait
-		nil,            // arguments
+		sendQueue, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // noWait
+		nil,       // arguments
 	)
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to declare a queue", err)
 	}
 
-	// Declare or use existing "builtImages" queue
 	_, err = ch.QueueDeclare(
-		"builtImages", // name
-		true,          // durable
-		false,         // delete when unused
-		false,         // exclusive
-		false,         // noWait
-		nil,           // arguments
+		recieveQueue, // name
+		true,         // durable
+		false,        // delete when unused
+		false,        // exclusive
+		false,        // noWait
+		nil,          // arguments
 	)
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to declare a queue", err)
 	}
 
 	msgs, err := ch.Consume(
-		"builtImages", // queue
-		"",            // consumer
-		true,          // auto-ack
-		false,         // exclusive
-		false,         // no-local
-		false,         // no-wait
-		nil,           // args
+		recieveQueue, // queue
+		"",           // consumer
+		true,         // auto-ack
+		false,        // exclusive
+		false,        // no-local
+		false,        // no-wait
+		nil,          // args
 	)
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to register a consumer", err)
@@ -315,7 +317,7 @@ func RPCclient(data FunctionBuildDeployData) {
 
 	corrId := fmt.Sprintf("build-id-%s", uuid.New())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	log.Println("send message")
@@ -325,14 +327,14 @@ func RPCclient(data FunctionBuildDeployData) {
 		log.Fatalf("Failed to marshal JSON: %v", err)
 	}
 	err = ch.PublishWithContext(ctx,
-		"",             // exchange
-		"imageBuilder", // routing key
-		false,          // mandatory
-		false,          // immediate
+		"",        // exchange
+		sendQueue, // routing key
+		false,     // mandatory
+		false,     // immediate
 		amqp.Publishing{
 			ContentType:   "application/json",
 			CorrelationId: corrId,
-			ReplyTo:       "builtImages",
+			ReplyTo:       recieveQueue,
 			Body:          jsonData,
 		})
 	if err != nil {
@@ -340,12 +342,15 @@ func RPCclient(data FunctionBuildDeployData) {
 	}
 
 	for d := range msgs {
+		fmt.Println("recived: ", d.CorrelationId)
 		if corrId == d.CorrelationId {
 			var imageData ImageData
 			err := json.Unmarshal(d.Body, &imageData)
 			if err != nil {
 				log.Panicf("%s: %s", "Failed To unmarshal", err)
 			}
+			fmt.Println("recived data:")
+			fmt.Println(imageData)
 			// kubernets.CreateKubernetesDeployment("name", "default", 1, v1.PodTemplateSpec{
 			// 	ObjectMeta: v1.PodTemplateSpec{},
 			// })
