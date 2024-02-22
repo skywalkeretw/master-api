@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -87,19 +88,6 @@ func CreateKubernetesDeployment(name, namespace string, replicas int, template c
 				MatchLabels: map[string]string{"app": name},
 			},
 			Template: template,
-			// Template: appsv1.PodTemplateSpec{
-			// 	ObjectMeta: metav1.ObjectMeta{
-			// 		Labels: map[string]string{"app": name},
-			// 	},
-			// 	Spec: appsv1.PodSpec{
-			// 		Containers: []appsv1.Container{
-			// 			{
-			// 				Name:  "example-container",
-			// 				Image: "nginx:latest", // Set the container image as needed
-			// 			},
-			// 		},
-			// 	},
-			// },
 		},
 	}
 
@@ -108,9 +96,10 @@ func CreateKubernetesDeployment(name, namespace string, replicas int, template c
 	if err != nil {
 		return fmt.Errorf("failed to create deployment: %v", err)
 	}
-
 	fmt.Printf("Deployment %s created successfully in namespace %s\n", name, namespace)
-	return nil
+
+	_, err = CreateKubernetesService(name, namespace)
+	return err
 }
 
 // DeleteKubernetesDeployment deletes a specific deployment in the Kubernetes cluster.
@@ -146,6 +135,37 @@ func UpdateKubernetesDeployment(name, namespace string, updateOptions metav1.Upd
 		return fmt.Errorf("update failed: %v", retryErr)
 	}
 	return nil
+}
+
+func CreateKubernetesService(name, namespace string) (*corev1.Service, error) {
+	// Define your service object
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP, // Specify the service type (e.g., ClusterIP, NodePort, LoadBalancer)
+			Ports: []corev1.ServicePort{
+				{
+					Port:       8080,                             // Specify the port number
+					TargetPort: intstr.IntOrString{IntVal: 8080}, // Specify the target port number
+				},
+			},
+			Selector: map[string]string{
+				"app": name, // Specify the labels to match for selecting pods
+			},
+			// Add any additional specifications as needed
+		},
+	}
+
+	// Call the Kubernetes API to create the service
+	createdService, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return createdService, nil
 }
 
 // GetKubernetesServices retrieves a list of all services in the Kubernetes cluster within the specified namespace.
