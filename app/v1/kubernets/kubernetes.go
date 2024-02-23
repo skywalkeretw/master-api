@@ -8,6 +8,7 @@ import (
 	"github.com/skywalkeretw/master-api/app/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
@@ -75,7 +76,7 @@ func GetKubernetesDeployment(name, namespace string) (*appsv1.Deployment, error)
 }
 
 // CreateKubernetesDeployment creates a new deployment in the Kubernetes cluster.
-func CreateKubernetesDeployment(name, namespace string, replicas int, template corev1.PodTemplateSpec) error {
+func CreateKubernetesDeployment(name, namespace, imageName, tags string, replicas int) error {
 	// Define the deployment object
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,9 +86,71 @@ func CreateKubernetesDeployment(name, namespace string, replicas int, template c
 		Spec: appsv1.DeploymentSpec{
 			Replicas: utils.Int32Ptr(replicas), // Set the number of replicas as needed
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": name},
+				MatchLabels: map[string]string{
+					"run": name,
+				},
 			},
-			Template: template,
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"run": name,
+					},
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{{
+						Name:            name,
+						Image:           imageName,
+						ImagePullPolicy: v1.PullAlways,
+						Ports: []v1.ContainerPort{{
+							Name:          "http",
+							Protocol:      v1.ProtocolTCP,
+							ContainerPort: 8080, // Specify the container port to open
+						}},
+						Env: []v1.EnvVar{
+							{
+								Name:  "TAGS",
+								Value: tags,
+							},
+							{
+								Name: "RABBITMQ_USERNAME",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "username",
+									},
+								},
+							},
+							{
+								Name: "RABBITMQ_PASSWORD",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "password",
+									},
+								},
+							},
+							{
+								Name: "RABBITMQ_HOST",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "host",
+									},
+								},
+							},
+							{
+								Name: "RABBITMQ_PORT",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "port",
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
 		},
 	}
 
@@ -148,12 +211,13 @@ func CreateKubernetesService(name, namespace string) (*corev1.Service, error) {
 			Type: corev1.ServiceTypeClusterIP, // Specify the service type (e.g., ClusterIP, NodePort, LoadBalancer)
 			Ports: []corev1.ServicePort{
 				{
+					Name:       "http",
 					Port:       8080,                             // Specify the port number
 					TargetPort: intstr.IntOrString{IntVal: 8080}, // Specify the target port number
 				},
 			},
 			Selector: map[string]string{
-				"app": name, // Specify the labels to match for selecting pods
+				"run": name, // Specify the labels to match for selecting pods
 			},
 			// Add any additional specifications as needed
 		},
@@ -164,6 +228,12 @@ func CreateKubernetesService(name, namespace string) (*corev1.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Wait for the service to be ready
+	// err = waitForServiceReady(namespace, name)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return createdService, nil
 }

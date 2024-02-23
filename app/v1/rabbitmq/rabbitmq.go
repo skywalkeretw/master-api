@@ -14,8 +14,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/skywalkeretw/master-api/app/utils"
 	"github.com/skywalkeretw/master-api/app/v1/kubernets"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // import (
@@ -354,14 +352,9 @@ func RPCclient(data FunctionBuildDeployData) {
 			}
 			fmt.Println("recived data:")
 			fmt.Println(imageData)
-			err = kubernets.CreateKubernetesDeployment(data.Name, "default", 1, v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": data.Name}},
-				Spec: v1.PodSpec{Containers: []v1.Container{{
-					Name:            data.Name,
-					Image:           imageData.ImageName,
-					ImagePullPolicy: v1.PullAlways,
-				}}},
-			})
+			tagString := fmt.Sprintf("runtime=%s:version", data.Language)
+			err = kubernets.CreateKubernetesDeployment(data.Name, "default", imageData.ImageName, tagString, 1)
+
 			if err != nil {
 				fmt.Println("failed to deploy", err.Error())
 			} else {
