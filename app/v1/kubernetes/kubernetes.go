@@ -1,9 +1,10 @@
-package kubernets
+package kubernetes
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,9 +46,9 @@ func init() {
 }
 
 // GetKubernetesPods retrieves a list of all pods in the Kubernetes cluster
-func GetKubernetesPods() ([]corev1.Pod, error) {
+func GetKubernetesPods(namespace string) ([]corev1.Pod, error) {
 
-	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +76,41 @@ func GetKubernetesDeployment(name, namespace string) (*appsv1.Deployment, error)
 	return deployment, nil
 }
 
+func GetOrCreateNamespace(namespace string) error {
+	var err error
+	// Check if the namespace exists
+	_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err == nil {
+		// Namespace exists, no need to create
+		fmt.Printf("Namespace %s already exists\n", namespace)
+		return nil
+	}
+
+	// If the error is not nil, it means something went wrong during the get operation
+	// Create the namespace since it doesn't exist
+	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Namespace %s created\n", namespace)
+	return nil
+}
+
+type FunctionModes struct {
+	HTTPSync       bool `json:"httpsync"`
+	HTTPAsync      bool `json:"httpasync"`
+	MessagingSync  bool `json:"messagingsync"`
+	MessagingAsync bool `json:"messagingasync"`
+}
+
 // CreateKubernetesDeployment creates a new deployment in the Kubernetes cluster.
-func CreateKubernetesDeployment(name, namespace, imageName, tags string, replicas int) error {
+func CreateKubernetesDeployment(name, namespace, imageName, description, tags string, modes FunctionModes, replicas int) error {
+
+	err := GetOrCreateNamespace(namespace)
+	if err != nil {
+		return fmt.Errorf("failed to create or retrieve namespace: %v", err)
+	}
+
 	// Define the deployment object
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -108,8 +142,28 @@ func CreateKubernetesDeployment(name, namespace, imageName, tags string, replica
 						}},
 						Env: []v1.EnvVar{
 							{
+								Name:  "DESCRIPTION",
+								Value: description,
+							},
+							{
 								Name:  "TAGS",
 								Value: tags,
+							},
+							{
+								Name:  "HTTPSYNC",
+								Value: strconv.FormatBool(modes.HTTPSync),
+							},
+							{
+								Name:  "HTTPASYNC",
+								Value: strconv.FormatBool(modes.HTTPAsync),
+							},
+							{
+								Name:  "MESSAGINGSYNC",
+								Value: strconv.FormatBool(modes.MessagingSync),
+							},
+							{
+								Name:  "MESSAGINGASYNC",
+								Value: strconv.FormatBool(modes.MessagingAsync),
 							},
 							{
 								Name: "RABBITMQ_USERNAME",
@@ -155,7 +209,7 @@ func CreateKubernetesDeployment(name, namespace, imageName, tags string, replica
 	}
 
 	// Create the deployment
-	_, err := clientset.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
+	_, err = clientset.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create deployment: %v", err)
 	}

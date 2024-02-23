@@ -189,3 +189,25 @@ func GetEnvInt(key string, defaultValue int) int {
 
 	return value
 }
+
+func StringToBool(str string) bool {
+	switch strings.ToLower(str) {
+	case "true", "t", "yes", "y", "1":
+		return true
+	case "false", "f", "no", "n", "0":
+		return false
+	default:
+		return false
+	}
+}
+
+// Custom validation function for allowed languages
+func ValidateAllowedLanguages(language string) bool {
+	allowedLanguages := []string{"golang", "python", "javascript"}
+	for _, allowed := range allowedLanguages {
+		if language == allowed {
+			return true
+		}
+	}
+	return false
+}

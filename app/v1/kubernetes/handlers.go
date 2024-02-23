@@ -1,4 +1,4 @@
-package kubernets
+package kubernetes
 
 import (
 	"net/http"
@@ -17,7 +17,7 @@ import (
 // @Success 200 {array} v1.Pod
 // @Router /api/v1/pods [get]
 func PodHandler(ctx *gin.Context) {
-	p, _ := GetKubernetesPods()
+	p, _ := GetKubernetesPods("")
 	ctx.JSON(http.StatusOK, p)
 }
 

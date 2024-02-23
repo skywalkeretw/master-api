@@ -4,8 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 
+	"github.com/skywalkeretw/master-api/app/utils"
 	asyncapi "github.com/skywalkeretw/master-api/app/v1/asyncAPI"
+	"github.com/skywalkeretw/master-api/app/v1/kubernetes"
 	openapi "github.com/skywalkeretw/master-api/app/v1/openAPI"
 	"github.com/skywalkeretw/master-api/app/v1/rabbitmq"
 )
@@ -16,9 +19,11 @@ func CreateFunction(functionData CreateFunctionHandlerData) {
 	var err error
 
 	buildDeployData := rabbitmq.FunctionBuildDeployData{
-		Name:       functionData.Name,
-		Language:   functionData.Language,
-		SourceCode: functionData.SourceCode,
+		Name:          functionData.Name,
+		Language:      functionData.Language,
+		Description:   functionData.Description,
+		SourceCode:    functionData.SourceCode,
+		FunctionModes: functionData.FunctionModes,
 	}
 
 	decodedInputParametersBytes, err := base64.StdEncoding.DecodeString(functionData.InputParameters)
@@ -86,4 +91,56 @@ func CreateFunction(functionData CreateFunctionHandlerData) {
 	fmt.Println(buildDeployData)
 	rabbitmq.RPCclient(buildDeployData)
 
+}
+
+type FunctionsData struct {
+	Name        string                   `json:"name"`
+	Description string                   `json:"description"`
+	Tags        map[string]string        `json:"tags"`
+	Modes       kubernetes.FunctionModes `json:"modes"`
+}
+
+func GetFunctions() ([]FunctionsData, error) {
+	var functions []FunctionsData
+	deployments, err := kubernetes.GetKubernetesDeployments("functions")
+	if err != nil {
+		return functions, fmt.Errorf("cannot get deployments from Kubernetes API %v", err.Error())
+	}
+
+	for _, deployment := range deployments {
+		newFunctionData := FunctionsData{
+			Name: deployment.Name,
+		}
+		for _, container := range deployment.Spec.Template.Spec.Containers {
+			for _, envVar := range container.Env {
+				switch envVar.Name {
+				case "DESCRIPTION":
+					newFunctionData.Description = envVar.Value
+				case "TAGS":
+					tagsList := strings.Split(envVar.Value, ":")
+					tags := make(map[string]string)
+
+					// Iterate over pairs and split each pair by "=" to get key-value
+					for _, pair := range tagsList {
+						kv := strings.Split(pair, "=")
+						if len(kv) == 2 {
+							tags[kv[0]] = kv[1]
+						}
+					}
+					newFunctionData.Tags = tags
+				case "HTTPSYNC":
+					newFunctionData.Modes.HTTPSync = utils.StringToBool(envVar.Value)
+				case "HTTPASYNC":
+					newFunctionData.Modes.HTTPAsync = utils.StringToBool(envVar.Value)
+				case "MESSAGINGSYNC":
+					newFunctionData.Modes.MessagingSync = utils.StringToBool(envVar.Value)
+				case "MESSAGINGASYNC":
+					newFunctionData.Modes.MessagingAsync = utils.StringToBool(envVar.Value)
+				}
+			}
+		}
+		functions = append(functions, newFunctionData)
+	}
+
+	return functions, nil
 }

@@ -1,4 +1,4 @@
-package kubernets
+package kubernetes
 
 import (
 	"context"
@@ -67,70 +67,36 @@ func TestCreateKubernetesDeployment(t *testing.T) {
 	tests := []struct {
 		name          string
 		namespace     string
+		description   string
+		imagename     string
+		tags          string
+		modes         FunctionModes
 		replicas      int
 		mockClientset kubernetes.Interface
-		template      corev1.PodTemplateSpec
 		expectErr     bool
 	}{
 		{
 			name:          "test-deployment",
 			namespace:     "default",
+			description:   "",
+			imagename:     "docker.io/busybox",
+			tags:          "runtime=busybox:false",
+			modes:         FunctionModes{},
 			replicas:      1,
 			mockClientset: testclient.NewSimpleClientset(),
-			template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "test-deployment"},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test-container",
-							Image: "nginx:latest",
-						},
-					},
-				},
-			},
-			expectErr: false,
+			expectErr:     false,
 		},
-		// {
-		// 	name:          "invalid-replicas",
-		// 	namespace:     "default",
-		// 	replicas:      -1,
-		// 	mockClientset: testclient.NewSimpleClientset(),
-		// 	template: corev1.PodTemplateSpec{
-		// 		ObjectMeta: metav1.ObjectMeta{
-		// 			Labels: map[string]string{"app": "invalid-replicas"},
-		// 		},
-		// 		Spec: corev1.PodSpec{
-		// 			Containers: []corev1.Container{
-		// 				{
-		// 					Name:  "test-container",
-		// 					Image: "nginx:latest",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	expectErr: true,
-		// },
+
 		{
 			name:          "empty-namespace",
 			namespace:     "",
+			description:   "",
+			imagename:     "docker.io/busybox",
+			tags:          "runtime=busybox:false",
+			modes:         FunctionModes{},
 			replicas:      3,
 			mockClientset: testclient.NewSimpleClientset(),
-			template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "empty-namespace"},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test-container",
-							Image: "nginx:latest",
-						},
-					},
-				},
-			},
-			expectErr: false,
+			expectErr:     false,
 		},
 		// Add more test cases as needed
 	}
@@ -139,7 +105,7 @@ func TestCreateKubernetesDeployment(t *testing.T) {
 		clientset = tt.mockClientset
 		t.Run(tt.name, func(t *testing.T) {
 			// Run the function with the test case inputs
-			err := CreateKubernetesDeployment(tt.name, tt.namespace, tt.replicas, tt.template)
+			err := CreateKubernetesDeployment(tt.name, tt.namespace, tt.imagename, tt.description, tt.tags, tt.modes, tt.replicas)
 
 			// Check if the error matches the expected result
 			assert.Equal(t, tt.expectErr, err != nil)
