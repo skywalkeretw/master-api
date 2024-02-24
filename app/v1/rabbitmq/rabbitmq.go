@@ -355,7 +355,7 @@ func RPCclient(data FunctionBuildDeployData) {
 			fmt.Println("recived data:")
 			fmt.Println(imageData)
 			tagString := fmt.Sprintf("runtime=%s:version=v1.0.0", data.Language)
-			err = kubernetes.CreateKubernetesDeployment(data.Name, "functions", imageData.ImageName, data.Description, tagString, data.FunctionModes, 1)
+			err = kubernetes.CreateKubernetesDeployment(data.Name, "default", imageData.ImageName, data.Description, tagString, data.FunctionModes, 1)
 
 			if err != nil {
 				fmt.Println("failed to deploy", err.Error())

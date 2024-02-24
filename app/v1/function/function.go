@@ -3,6 +3,7 @@ package function
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -102,44 +103,51 @@ type FunctionsData struct {
 
 func GetFunctions() ([]FunctionsData, error) {
 	var functions []FunctionsData
-	deployments, err := kubernetes.GetKubernetesDeployments("functions")
+	deployments, err := kubernetes.GetKubernetesDeployments("default")
 	if err != nil {
 		return functions, fmt.Errorf("cannot get deployments from Kubernetes API %v", err.Error())
 	}
 
 	for _, deployment := range deployments {
-		newFunctionData := FunctionsData{
-			Name: deployment.Name,
-		}
-		for _, container := range deployment.Spec.Template.Spec.Containers {
-			for _, envVar := range container.Env {
-				switch envVar.Name {
-				case "DESCRIPTION":
-					newFunctionData.Description = envVar.Value
-				case "TAGS":
-					tagsList := strings.Split(envVar.Value, ":")
-					tags := make(map[string]string)
+		value, ok := deployment.Spec.Template.ObjectMeta.Labels["type"]
+		if ok && value == "function" {
 
-					// Iterate over pairs and split each pair by "=" to get key-value
-					for _, pair := range tagsList {
-						kv := strings.Split(pair, "=")
-						if len(kv) == 2 {
-							tags[kv[0]] = kv[1]
+			newFunctionData := FunctionsData{
+				Name: deployment.Name,
+			}
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				for _, envVar := range container.Env {
+					switch envVar.Name {
+					case "DESCRIPTION":
+						newFunctionData.Description = envVar.Value
+					case "TAGS":
+						tagsList := strings.Split(envVar.Value, ":")
+						tags := make(map[string]string)
+
+						// Iterate over pairs and split each pair by "=" to get key-value
+						for _, pair := range tagsList {
+							kv := strings.Split(pair, "=")
+							if len(kv) == 2 {
+								tags[kv[0]] = kv[1]
+							}
 						}
+						newFunctionData.Tags = tags
+					case "HTTPSYNC":
+						newFunctionData.Modes.HTTPSync = utils.StringToBool(envVar.Value)
+					case "HTTPASYNC":
+						newFunctionData.Modes.HTTPAsync = utils.StringToBool(envVar.Value)
+					case "MESSAGINGSYNC":
+						newFunctionData.Modes.MessagingSync = utils.StringToBool(envVar.Value)
+					case "MESSAGINGASYNC":
+						newFunctionData.Modes.MessagingAsync = utils.StringToBool(envVar.Value)
 					}
-					newFunctionData.Tags = tags
-				case "HTTPSYNC":
-					newFunctionData.Modes.HTTPSync = utils.StringToBool(envVar.Value)
-				case "HTTPASYNC":
-					newFunctionData.Modes.HTTPAsync = utils.StringToBool(envVar.Value)
-				case "MESSAGINGSYNC":
-					newFunctionData.Modes.MessagingSync = utils.StringToBool(envVar.Value)
-				case "MESSAGINGASYNC":
-					newFunctionData.Modes.MessagingAsync = utils.StringToBool(envVar.Value)
 				}
 			}
+			functions = append(functions, newFunctionData)
 		}
-		functions = append(functions, newFunctionData)
+	}
+	if len(functions) == 0 {
+		return functions, errors.New("no functions found in kubernetes api")
 	}
 
 	return functions, nil

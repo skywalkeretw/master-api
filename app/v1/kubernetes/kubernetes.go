@@ -58,6 +58,9 @@ func GetKubernetesPods(namespace string) ([]corev1.Pod, error) {
 
 // GetKubernetesDeployments retrieves a list of all deployments in the Kubernetes cluster
 func GetKubernetesDeployments(namespace string) ([]appsv1.Deployment, error) {
+	// Create ListOptions with label selector
+
+	// Fetch deployments filtered by label selector
 	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -106,11 +109,14 @@ type FunctionModes struct {
 // CreateKubernetesDeployment creates a new deployment in the Kubernetes cluster.
 func CreateKubernetesDeployment(name, namespace, imageName, description, tags string, modes FunctionModes, replicas int) error {
 
-	err := GetOrCreateNamespace(namespace)
-	if err != nil {
-		return fmt.Errorf("failed to create or retrieve namespace: %v", err)
+	// err := GetOrCreateNamespace(namespace)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create or retrieve namespace: %v", err)
+	// }
+	labels := map[string]string{
+		"run":  name,
+		"type": "function",
 	}
-
 	// Define the deployment object
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -120,15 +126,11 @@ func CreateKubernetesDeployment(name, namespace, imageName, description, tags st
 		Spec: appsv1.DeploymentSpec{
 			Replicas: utils.Int32Ptr(replicas), // Set the number of replicas as needed
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"run": name,
-				},
+				MatchLabels: labels,
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"run": name,
-					},
+					Labels: labels,
 				},
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{{
@@ -209,7 +211,7 @@ func CreateKubernetesDeployment(name, namespace, imageName, description, tags st
 	}
 
 	// Create the deployment
-	_, err = clientset.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
+	_, err := clientset.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create deployment: %v", err)
 	}
