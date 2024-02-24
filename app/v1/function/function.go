@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 
 	"github.com/skywalkeretw/master-api/app/utils"
@@ -151,4 +154,50 @@ func GetFunctions() ([]FunctionsData, error) {
 	}
 
 	return functions, nil
+}
+
+func GenerateAdapterCode(functionName, functionMode, language string) (string, error) {
+
+	switch functionMode {
+	case "httpsync":
+		swaggerSpecPath, err := getSpec(functionName, "openapi")
+		if err != nil {
+			return "", err
+		}
+		return openapi.GenerateClient(swaggerSpecPath, language)
+	case "httpasync":
+		//openapi.GenerateClient(swaggerSpecPath, language)
+	case "messagingsync":
+
+	case "messagingasync":
+
+	}
+
+	return "", fmt.Errorf("wrong function mode")
+
+}
+
+func getSpec(function, mode string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("http://%s.default:8080/%s", function, mode))
+	if err != nil {
+		return "", fmt.Errorf("failed to call function: %v", err.Error())
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read function body: %v", err.Error())
+	}
+
+	// Convert byte slice to string
+	openapiSpec := string(body)
+	filepath := "openapi.json"
+	// Write the string to a file
+	err = os.WriteFile(filepath, []byte(openapiSpec), 0644)
+	if err != nil {
+		return "", fmt.Errorf("Error writing to file: %v", err.Error())
+	}
+
+	return filepath, nil
 }

@@ -24,8 +24,10 @@ func ConfigureRoutes(v1 *gin.RouterGroup) {
 	v1.GET("/help", openapi.SwaggerCodegenHelpHandler)
 	v1.POST("/generateserver", openapi.GenerateServerStubHandler)
 	v1.POST("/generateclient", openapi.GenerateClientHandler)
+
 	v1.POST("/createfunction", function.CreateFunctionHandler)
 	v1.GET("/function", function.GetFunctionsHandler)
+	v1.POST("/generateadaptercode", function.GenerateAdapterCodeHandler)
 	// v1.DELETE("/queue", rabbitmq.DeleteQueueHandler)
 	// v1.POST("/generateadapter")
 	// v1.POST("/deployapp")

@@ -3,6 +3,7 @@ package function
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skywalkeretw/master-api/app/utils"
@@ -54,4 +55,29 @@ func GetFunctionsHandler(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to retrive functions"))
 	}
 	ctx.JSON(http.StatusOK, functions)
+}
+
+type GenerateAdapterCodeData struct {
+	Function string `json:"function" binding:"required"`
+	Language string `json:"language" binding:"required"`
+	Mode     string `json:"mode" binding:"required"`
+}
+
+func GenerateAdapterCodeHandler(ctx *gin.Context) {
+	var data GenerateAdapterCodeData
+	if err := ctx.ShouldBind(&data); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	clientDataZipPath, err := GenerateAdapterCode(data.Function, data.Mode, data.Language)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	clientDataZip, err := os.ReadFile(clientDataZipPath)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Failed to read zip file"))
+		return
+	}
+	ctx.Data(http.StatusOK, "application/zip", clientDataZip)
 }
