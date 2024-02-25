@@ -157,7 +157,7 @@ func GetFunctions() ([]FunctionsData, error) {
 }
 
 func GenerateAdapterCode(functionName, functionMode, language string) (string, error) {
-
+	fmt.Println(functionName, functionMode, language)
 	switch functionMode {
 	case "httpsync":
 		swaggerSpecPath, err := getSpec(functionName, "openapi")
@@ -178,6 +178,8 @@ func GenerateAdapterCode(functionName, functionMode, language string) (string, e
 }
 
 func getSpec(function, mode string) (string, error) {
+
+	writeFile("/specs/myfile.json", "hello world")
 	resp, err := http.Get(fmt.Sprintf("http://%s.default:8080/%s", function, mode))
 	if err != nil {
 		return "", fmt.Errorf("failed to call function: %v", err.Error())
@@ -190,14 +192,22 @@ func getSpec(function, mode string) (string, error) {
 		return "", fmt.Errorf("failed to read function body: %v", err.Error())
 	}
 
-	// Convert byte slice to string
-	openapiSpec := string(body)
-	filepath := "openapi.json"
-	// Write the string to a file
-	err = os.WriteFile(filepath, []byte(openapiSpec), 0644)
-	if err != nil {
-		return "", fmt.Errorf("Error writing to file: %v", err.Error())
-	}
+	file := fmt.Sprintf("/specs/%s-openapi.json", function)
+	writeFile(file, string(body))
 
-	return filepath, nil
+	return file, nil
+}
+
+func writeFile(filename string, text string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(text)
+	if err != nil {
+		return err
+	}
+	return nil
 }

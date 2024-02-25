@@ -38,6 +38,8 @@ RUN apt update && apt install -y software-properties-common && \
 
 WORKDIR /
 
+RUN mkdir specs
+
 COPY --from=build-stage /api /api
 
 

@@ -49,7 +49,7 @@ func GenerateTempFolder() (string, error) {
 	randomFolderName := fmt.Sprintf("gen_code_%s", uuid.New())
 
 	// Create the full path for the temporary folder
-	tempFolderPath := filepath.Join("generate", "output", randomFolderName)
+	tempFolderPath := filepath.Join("/generate", "output", randomFolderName)
 
 	// Create missing folders if specified in the path
 	if err := os.MkdirAll(filepath.Dir(tempFolderPath), os.ModePerm); err != nil {

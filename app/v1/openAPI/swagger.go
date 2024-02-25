@@ -2,7 +2,6 @@ package openapi
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 )
@@ -18,26 +17,27 @@ func GenerateServerStub(swaggerSpecPath, language string) (string, error) {
 		return "", err
 	}
 
-	_, err = utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpecPath, "-l", language, "-o", serverCodeTmpDirPath)
+	swaggerCodgenCMD, err := utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpecPath, "-l", language, "-o", serverCodeTmpDirPath)
 	if err != nil {
 		return "", err
 	}
-
+	fmt.Println(swaggerCodgenCMD)
+	fmt.Println(serverCodeTmpDirPath)
 	zipPath := fmt.Sprintf("/generate/%s.zip", language)
 	err = utils.ZipFolder(serverCodeTmpDirPath, zipPath)
 	if err != nil {
 		return "", err
 	}
-	err = utils.DeleteFolder(serverCodeTmpDirPath)
-	if err != nil {
-		fmt.Println("failed to delete folder")
-		// return "", err
-	}
-	err = os.Remove(swaggerSpecPath)
-	if err != nil {
-		fmt.Println("failed to delete swagger json")
-		// return "", err
-	}
+	// err = utils.DeleteFolder(serverCodeTmpDirPath)
+	// if err != nil {
+	// 	fmt.Println("failed to delete folder")
+	// 	// return "", err
+	// }
+	// err = os.Remove(swaggerSpecPath)
+	// if err != nil {
+	// 	fmt.Println("failed to delete swagger json")
+	// 	// return "", err
+	// }
 	return zipPath, nil
 }
 
@@ -58,16 +58,16 @@ func GenerateClient(swaggerSpecPath, language string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = utils.DeleteFolder(clientCodeTmpDirPath)
-	if err != nil {
-		fmt.Println("failed to delete folder")
-		// return "", err
-	}
-	err = os.Remove(swaggerSpecPath)
-	if err != nil {
-		fmt.Println("failed to delete swagger json")
-		// return "", err
-	}
+	// err = utils.DeleteFolder(clientCodeTmpDirPath)
+	// if err != nil {
+	// 	fmt.Println("failed to delete folder")
+	// 	// return "", err
+	// }
+	// err = os.Remove(swaggerSpecPath)
+	// if err != nil {
+	// 	fmt.Println("failed to delete swagger json")
+	// 	// return "", err
+	// }
 	return zipPath, nil
 }
 
