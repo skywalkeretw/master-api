@@ -41,7 +41,7 @@ func GenerateServerStub(swaggerSpecPath, language string) (string, error) {
 	return zipPath, nil
 }
 
-func GenerateClient(swaggerSpecPath, language string) (string, error) {
+func GenerateClient(swaggerSpecPath, name, language string) (string, error) {
 	utils.Contains(clients, language)
 	clientCodeTmpDirPath, err := utils.GenerateTempFolder()
 	if err != nil {
@@ -53,7 +53,7 @@ func GenerateClient(swaggerSpecPath, language string) (string, error) {
 		return "", err
 	}
 
-	zipPath := fmt.Sprintf("/generate/%s.zip", language)
+	zipPath := fmt.Sprintf("/generate/%s-%s.zip", name, language)
 	err = utils.ZipFolder(clientCodeTmpDirPath, zipPath)
 	if err != nil {
 		return "", err

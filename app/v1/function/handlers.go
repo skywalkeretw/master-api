@@ -3,7 +3,7 @@ package function
 import (
 	"fmt"
 	"net/http"
-	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skywalkeretw/master-api/app/utils"
@@ -69,15 +69,17 @@ func GenerateAdapterCodeHandler(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
+
+	// mini workaround to gnerate the adapter code
+	if data.Language == "golang" {
+		data.Language = "go"
+	}
+
 	clientDataZipPath, err := GenerateAdapterCode(data.Function, data.Mode, data.Language)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	clientDataZip, err := os.ReadFile(clientDataZipPath)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Failed to read zip file"))
-		return
-	}
-	ctx.Data(http.StatusOK, "application/zip", clientDataZip)
+	fileName := filepath.Base(clientDataZipPath)
+	ctx.FileAttachment(clientDataZipPath, fileName)
 }

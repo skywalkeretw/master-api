@@ -164,8 +164,13 @@ func GenerateAdapterCode(functionName, functionMode, language string) (string, e
 		if err != nil {
 			return "", err
 		}
-		return openapi.GenerateClient(swaggerSpecPath, language)
+		return openapi.GenerateClient(swaggerSpecPath, functionName, language)
 	case "httpasync":
+		swaggerSpecPath, err := getSpec(functionName, "openapi")
+		if err != nil {
+			return "", err
+		}
+		return openapi.GenerateClient(swaggerSpecPath, functionName, language)
 		//openapi.GenerateClient(swaggerSpecPath, language)
 	case "messagingsync":
 
@@ -178,8 +183,6 @@ func GenerateAdapterCode(functionName, functionMode, language string) (string, e
 }
 
 func getSpec(function, mode string) (string, error) {
-
-	writeFile("/specs/myfile.json", "hello world")
 	resp, err := http.Get(fmt.Sprintf("http://%s.default:8080/%s", function, mode))
 	if err != nil {
 		return "", fmt.Errorf("failed to call function: %v", err.Error())
@@ -191,21 +194,45 @@ func getSpec(function, mode string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to read function body: %v", err.Error())
 	}
+	// Define a map to store the JSON data
+
+	var jsonString string
+	if err := json.Unmarshal(body, &jsonString); err != nil {
+		return "", fmt.Errorf("failed to unmarshal JSON string: %v", err.Error())
+	}
+
+	var jsonData map[string]interface{}
+
+	// Unmarshal JSON into the map
+	if err := json.Unmarshal([]byte(jsonString), &jsonData); err != nil {
+		return "", fmt.Errorf("failed to unmarshal JSON: %v", err)
+
+	}
+	fmt.Println("JSON Data: ", jsonData)
+
+	specJson, err := json.Marshal(jsonData)
+	if err != nil {
+		return "", fmt.Errorf("error: %v", err)
+
+	}
 
 	file := fmt.Sprintf("/specs/%s-openapi.json", function)
-	writeFile(file, string(body))
+	err = writeFile(file, specJson)
+	if err != nil {
+		return "", fmt.Errorf("failed to write to file: %v", err.Error())
+	}
 
 	return file, nil
 }
 
-func writeFile(filename string, text string) error {
+func writeFile(filename string, data []byte) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	_, err = file.WriteString(text)
+	_, err = file.Write(data)
 	if err != nil {
 		return err
 	}
