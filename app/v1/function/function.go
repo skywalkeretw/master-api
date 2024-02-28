@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/skywalkeretw/master-api/app/utils"
@@ -171,10 +170,19 @@ func GenerateAdapterCode(functionName, functionMode, language string) (string, e
 			return "", err
 		}
 		return openapi.GenerateClient(swaggerSpecPath, functionName, language)
-		//openapi.GenerateClient(swaggerSpecPath, language)
 	case "messagingsync":
+		asyncapiSpecPath, err := getSpec(functionName, "asyncapi")
+		if err != nil {
+			return "", err
+		}
+		return asyncapi.GenerateClient(asyncapiSpecPath, functionName, language)
 
 	case "messagingasync":
+		asyncapiSpecPath, err := getSpec(functionName, "asyncapi")
+		if err != nil {
+			return "", err
+		}
+		return asyncapi.GenerateClient(asyncapiSpecPath, functionName, language)
 
 	}
 
@@ -217,24 +225,10 @@ func getSpec(function, mode string) (string, error) {
 	}
 
 	file := fmt.Sprintf("/specs/%s-openapi.json", function)
-	err = writeFile(file, specJson)
+	err = utils.WriteFile(file, specJson)
 	if err != nil {
 		return "", fmt.Errorf("failed to write to file: %v", err.Error())
 	}
 
 	return file, nil
-}
-
-func writeFile(filename string, data []byte) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.Write(data)
-	if err != nil {
-		return err
-	}
-	return nil
 }

@@ -52,7 +52,8 @@ swagger:
 create-cluster: create-kind-cluster deploy-rabbitmq docker-build-load deploy-api
 
 create-kind-cluster:
-	./deployment/deploy-cluster.sh
+	kind create cluster --name master --config deployment/kind-config.yml
+# ./deployment/deploy-cluster.sh
 
 # Target to delete the Kind cluster with the specified name.
 .PHONY: delete-cluster

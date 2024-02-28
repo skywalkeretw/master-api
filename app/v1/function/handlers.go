@@ -77,7 +77,7 @@ func GenerateAdapterCodeHandler(ctx *gin.Context) {
 
 	clientDataZipPath, err := GenerateAdapterCode(data.Function, data.Mode, data.Language)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	fileName := filepath.Base(clientDataZipPath)
