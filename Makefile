@@ -77,8 +77,9 @@ deploy-api:
 .PHONY: deploy-rabbitmq
 deploy-rabbitmq:
 	kubectl apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
-	kubectl apply -f https://raw.githubusercontent.com/rabbitmq/cluster-operator/main/docs/examples/hello-world/rabbitmq.yaml
-
+# kubectl apply -f https://raw.githubusercontent.com/rabbitmq/cluster-operator/main/docs/examples/hello-world/rabbitmq.yaml
+	kubectl apply -f deployment/rabbitmq.yml
+# kubectl apply -f deployment/rabbitmq-service.yml
 
 # Target to apply Kubernetes manifests using kubectl.
 .PHONY: deploy-registry

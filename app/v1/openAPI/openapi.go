@@ -259,7 +259,8 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 		},
 		Servers: []Server{
 			{
-				URL:         fmt.Sprintf("http://%s.default:8080", functionData.Name),
+				// URL:         fmt.Sprintf("http://%s.default:8080", functionData.Name),
+				URL:         "http://localhost:8080", // TODO: Make this dynamic based on the environment
 				Description: "Service url inside the Kubernetes Cluster",
 			},
 		},

@@ -7,9 +7,17 @@ containerdConfigPatches:
 nodes:
 - role: control-plane
   extraPortMappings:
+  # Exposed API
   - containerPort: 30951
     hostPort: 8081
+  # Exposed Dashboard
   - containerPort: 30952
     hostPort: 8082
+  # Exposed RabbitMQ Port / Service
+  - containerPort: 30953
+    hostPort: 5672
+  # Exposed Example Function Service
+  - containerPort: 30950
+    hostPort: 8080
   # - containerPort: 30952
   #   hostPort: 5000

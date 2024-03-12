@@ -264,12 +264,14 @@ func CreateKubernetesService(name, namespace string) (*corev1.Service, error) {
 			Namespace: namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP, // Specify the service type (e.g., ClusterIP, NodePort, LoadBalancer)
+			// Type: corev1.ServiceTypeClusterIP, // Specify the service type (e.g., ClusterIP, NodePort, LoadBalancer)
+			Type: corev1.ServiceTypeNodePort,
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "http",
 					Port:       8080,                             // Specify the port number
 					TargetPort: intstr.IntOrString{IntVal: 8080}, // Specify the target port number
+					NodePort:   30950,                            // HARD Coded for one time use
 				},
 			},
 			Selector: map[string]string{

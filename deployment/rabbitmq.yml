@@ -1,5 +1,16 @@
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
-  name: rabbitmq-system
+  name: hello-world
 spec:
+  replicas: 1
+  override:
+    service:
+      spec:
+        type: NodePort
+        ports:
+          - name: amqp # adds an additional port on the service
+            nodePort: 30953
+            protocol: TCP
+            port: 5672
+            targetPort: 5672
