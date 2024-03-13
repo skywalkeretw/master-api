@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/skywalkeretw/master-api/app/utils"
@@ -226,9 +227,10 @@ func generateProperties(dataString string) map[string]Property {
 
 			if strType != "object" {
 				properties[key] = Property{Type: strType}
-			} else {
-				// Recursively handle object type
 			}
+			// else {
+			// 	// Recursively handle object type
+			// }
 		}
 	}
 	return properties
@@ -397,20 +399,44 @@ func GenerateClient(asyncapiSpecPath, name, language string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var generator string
-	switch language {
-	case "go", "golang":
-		generator = "@asyncapi/go-watermill-template"
-	case "python":
-		generator = "@asyncapi/python-paho-template"
-	case "javascript":
-		generator = "@asyncapi/nodejs-template"
-	}
+
+	// dont use generator as
+
+	// var generator string
+	// switch language {
+	// case "go", "golang":
+	// 	generator = "@asyncapi/go-watermill-template"
+	// case "python":
+	// 	generator = "@asyncapi/python-paho-template"
+	// case "javascript":
+	// 	generator = "@asyncapi/nodejs-template"
+	// }
 	// npm install -g @asyncapi/cli
 	// asyncapi generate fromTemplate https://bit.ly/asyncapi @asyncapi/nodejs-template  -o example
-	_, err = utils.RunShellCommand("asyncapi", "generate", "fromTemplate", asyncapiSpecPath, generator, "-o", clientCodeTmpDirPath)
-	if err != nil {
-		return "", err
+	// _, err = utils.RunShellCommand("asyncapi", "generate", "fromTemplate", asyncapiSpecPath, generator, "-o", clientCodeTmpDirPath)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	switch language {
+	case "python":
+		err = utils.CopyFileToFolder("/templates/python/msgfunctioncall.py", clientCodeTmpDirPath)
+		if err != nil {
+			return "", err
+		}
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "msgfunctioncall.py"), "{{FUNCTION_NAME}}", name)
+		if err != nil {
+			return "", err
+		}
+
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "msgfunctioncall.py"), "{{RABBITMQ_USERNAME}}", utils.GetEnvSting("RABBITMQ_USERNAME", "guest"))
+		if err != nil {
+			return "", err
+		}
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "msgfunctioncall.py"), "{{RABBITMQ_PASSWORD}}", utils.GetEnvSting("RABBITMQ_PASSWORD", "guest"))
+		if err != nil {
+			return "", err
+		}
 	}
 
 	zipPath := fmt.Sprintf("/generate/%s-%s.zip", name, language)

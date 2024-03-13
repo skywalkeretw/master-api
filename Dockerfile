@@ -42,6 +42,7 @@ RUN mkdir specs
 
 COPY --from=build-stage /api /api
 
+COPY templates /templates
 
 EXPOSE 8080
 

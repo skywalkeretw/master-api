@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -223,5 +224,56 @@ func WriteFile(filename string, data []byte) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func ReplacePlaceholder(filePath, placeholder, replacement string) error {
+	// Read the file content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Perform replacement
+	replacedContent := bytes.ReplaceAll(content, []byte(placeholder), []byte(replacement))
+
+	// Write the modified content back to the file
+	err = os.WriteFile(filePath, replacedContent, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CopyFileToFolder(sourceFile, destinationFolder string) error {
+	// Open the source file
+	src, err := os.Open(sourceFile)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	// Create the destination folder if it doesn't exist
+	if err := os.MkdirAll(destinationFolder, 0755); err != nil {
+		return err
+	}
+
+	// Get the filename from the source file path
+	_, filename := filepath.Split(sourceFile)
+
+	// Create the destination file
+	dstPath := filepath.Join(destinationFolder, filename)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	// Copy the content from source to destination
+	if _, err := io.Copy(dst, src); err != nil {
+		return err
+	}
+
 	return nil
 }

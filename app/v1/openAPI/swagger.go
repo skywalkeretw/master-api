@@ -2,6 +2,10 @@ package openapi
 
 import (
 	"fmt"
+	"path/filepath"
+
+	"golang.org/x/text/cases"
+	lang "golang.org/x/text/language"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 )
@@ -51,6 +55,23 @@ func GenerateClient(swaggerSpecPath, name, language string) (string, error) {
 	_, err = utils.RunShellCommand("swagger-codegen", "generate", "-i", swaggerSpecPath, "-l", language, "-o", clientCodeTmpDirPath)
 	if err != nil {
 		return "", err
+	}
+
+	// create file to apstract the swagger package
+	switch language {
+	case "go":
+		err = utils.CopyFileToFolder("/templates/go/functioncall.go", clientCodeTmpDirPath)
+		if err != nil {
+			return "", err
+		}
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "functioncall.go"), "{{FUNCTION_NAME}}", cases.Title(lang.English, cases.Compact).String(name))
+		if err != nil {
+			return "", err
+		}
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "functioncall.go"), "{{FUNCTION_RETURN}}", "string")
+		if err != nil {
+			return "", err
+		}
 	}
 
 	zipPath := fmt.Sprintf("/generate/%s-%s.zip", name, language)
