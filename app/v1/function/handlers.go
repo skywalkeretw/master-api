@@ -3,27 +3,23 @@ package function
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skywalkeretw/master-api/app/utils"
+	"github.com/skywalkeretw/master-api/app/v1/kubernetes"
 )
 
 // @Summary Create Function Data
 // @Description Represents data for creating a function
 type CreateFunctionHandlerData struct {
-	Name            string        `json:"name" binding:"required"`
-	Description     string        `json:"description" binding:"required"`
-	Language        string        `json:"language" binding:"required"`
-	SourceCode      string        `json:"sourcecode" binding:"required"`
-	InputParameters string        `json:"inputparameters" binding:"required"`
-	ReturnValue     string        `json:"returnvalue" binding:"required"`
-	FunctionModes   FunctionModes `json:"functionmodes" binding:"required"`
-}
-
-type FunctionModes struct {
-	HTTPSync       bool `json:"httpsync"`
-	HTTPAsync      bool `json:"httpasync"`
-	MessagingSync  bool `json:"messagingsync"`
-	MessagingAsync bool `json:"messagingasync"`
+	Name            string                   `json:"name" binding:"required"`
+	Description     string                   `json:"description" binding:"required"`
+	Language        string                   `json:"language" binding:"required"`
+	SourceCode      string                   `json:"sourcecode" binding:"required"`
+	InputParameters string                   `json:"inputparameters" binding:"required"`
+	ReturnValue     string                   `json:"returnvalue" binding:"required"`
+	FunctionModes   kubernetes.FunctionModes `json:"functionmodes" binding:"required"`
 }
 
 // @Summary Create a new Function
@@ -39,7 +35,7 @@ func CreateFunctionHandler(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 	}
-	if !validateAllowedLanguages(data.Language) {
+	if !utils.ValidateAllowedLanguages(data.Language) {
 		ctx.AbortWithError(http.StatusForbidden, fmt.Errorf("unsupported language: %s", data.Language))
 	}
 
@@ -47,13 +43,43 @@ func CreateFunctionHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"msg": "Your Function is beeing Processed"})
 }
 
-// Custom validation function for allowed languages
-func validateAllowedLanguages(language string) bool {
-	allowedLanguages := []string{"golang", "python", "javascript"}
-	for _, allowed := range allowedLanguages {
-		if language == allowed {
-			return true
-		}
+// @Summary Get Function List
+// @Description Returns a list of all functions in Kubernetes Cluster
+// @Tags Function
+// @Produce json
+// @Success 200 {object} []FunctionsData
+// @Router /api/v1/function [get]
+func GetFunctionsHandler(ctx *gin.Context) {
+	functions, err := GetFunctions()
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to retrive functions"))
 	}
-	return false
+	ctx.JSON(http.StatusOK, functions)
+}
+
+type GenerateAdapterCodeData struct {
+	Function string `json:"function" binding:"required"`
+	Language string `json:"language" binding:"required"`
+	Mode     string `json:"mode" binding:"required"`
+}
+
+func GenerateAdapterCodeHandler(ctx *gin.Context) {
+	var data GenerateAdapterCodeData
+	if err := ctx.ShouldBind(&data); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	// mini workaround to gnerate the adapter code
+	if data.Language == "golang" {
+		data.Language = "go"
+	}
+
+	clientDataZipPath, err := GenerateAdapterCode(data.Function, data.Mode, data.Language)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	fileName := filepath.Base(clientDataZipPath)
+	ctx.FileAttachment(clientDataZipPath, fileName)
 }

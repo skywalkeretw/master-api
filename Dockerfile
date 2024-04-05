@@ -30,16 +30,19 @@ RUN apt install -y nodejs
 
 RUN apt update && apt install -y software-properties-common && \
     add-apt-repository ppa:openjdk-r/ppa -y && \
-    apt update && apt install -y openjdk-11-jdk wget ca-certificates curl gnupg && \
-    wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.50/swagger-codegen-cli-3.0.50.jar -O swagger-codegen-cli.jar && \
+    apt update && apt install -y openjdk-11-jdk git wget ca-certificates curl gnupg && \
+    wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.54/swagger-codegen-cli-3.0.54.jar -O swagger-codegen-cli.jar && \
     echo '#!/bin/bash' > /bin/swagger-codegen && echo 'java -jar /bin/swagger-codegen-cli.jar "$@"' >> /bin/swagger-codegen && chmod +x /bin/swagger-codegen && \
     npm install -g @asyncapi/cli
 
 
 WORKDIR /
 
+RUN mkdir specs
+
 COPY --from=build-stage /api /api
 
+COPY templates /templates
 
 EXPOSE 8080
 

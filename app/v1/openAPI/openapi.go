@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 )
 
 // OpenAPI represents the OpenAPI specification.
 type OpenAPI struct {
-	Openapi      string                `json:"openapi"`
-	Info         Info                  `json:"info"`
+	Openapi      string                `json:"openapi,omitempty"`
+	Info         Info                  `json:"info,omitempty"`
 	Servers      []Server              `json:"servers,omitempty"`
-	Paths        map[string]Path       `json:"paths"`
+	Paths        map[string]Path       `json:"paths,omitempty"`
 	Components   Components            `json:"components,omitempty"`
 	Security     []map[string][]string `json:"security,omitempty"`
 	Tags         []Tag                 `json:"tags,omitempty"`
@@ -24,8 +25,8 @@ type OpenAPI struct {
 
 // Info represents the metadata information in the OpenAPI specification.
 type Info struct {
-	Title          string  `json:"title"`
-	Version        string  `json:"version"`
+	Title          string  `json:"title,omitempty"`
+	Version        string  `json:"version,omitempty"`
 	Description    string  `json:"description,omitempty"`
 	TermsOfService string  `json:"termsOfService,omitempty"`
 	Contact        Contact `json:"contact,omitempty"`
@@ -34,14 +35,14 @@ type Info struct {
 
 // Server represents a server in the OpenAPI specification.
 type Server struct {
-	URL         string                    `json:"url"`
+	URL         string                    `json:"url,omitempty"`
 	Description string                    `json:"description,omitempty"`
 	Variables   map[string]ServerVariable `json:"variables,omitempty"`
 }
 
 // ServerVariable represents a variable for a server in the OpenAPI specification.
 type ServerVariable struct {
-	Default     string   `json:"default"`
+	Default     string   `json:"default,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Enum        []string `json:"enum,omitempty"`
 }
@@ -65,8 +66,8 @@ type Operation struct {
 	Summary     string                `json:"summary,omitempty"`
 	Description string                `json:"description,omitempty"`
 	OperationID string                `json:"operationId,omitempty"`
-	Deprecated  bool                  `json:"deprecated"`
-	Responses   map[string]Response   `json:"responses"`
+	Deprecated  bool                  `json:"deprecated,omitempty"`
+	Responses   map[string]Response   `json:"responses,omitempty"`
 	RequestBody *RequestBody          `json:"requestBody,omitempty"`
 	Callbacks   map[string]Callback   `json:"callbacks,omitempty"`
 	Security    []map[string][]string `json:"security,omitempty"`
@@ -75,10 +76,10 @@ type Operation struct {
 
 // Response represents a response in the OpenAPI specification.
 type Response struct {
-	Description string               `json:"description"`
-	Schema      Schema               `json:"schema,omitempty"`
-	Headers     map[string]Header    `json:"headers,omitempty"`
-	Content     map[string]MediaType `json:"content,omitempty"`
+	Description string `json:"description"`
+	// Schema      Schema               `json:"schema,omitempty"`
+	Headers map[string]Header    `json:"headers,omitempty"`
+	Content map[string]MediaType `json:"content,omitempty"`
 }
 
 // MediaType represents a media type in the OpenAPI specification.
@@ -132,7 +133,7 @@ type Contact struct {
 
 // License represents license information in the OpenAPI specification.
 type License struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 	URL  string `json:"url,omitempty"`
 }
 
@@ -201,7 +202,6 @@ type OpenAPISpecData struct {
 }
 
 func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
-
 	requestBody := RequestBody{}
 	if functionData.InputParameters != "" {
 		if utils.IsJSONObject(functionData.InputParameters) {
@@ -213,13 +213,12 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 				Required: true,
 			}
 		} else {
-			return "", fmt.Errorf("unsopported format create a correct json file")
+			return "", fmt.Errorf("unsupported format, please provide valid JSON for input parameters")
 		}
 	}
 
 	var responses map[string]Response
 	if utils.IsJSONObject(functionData.ReturnValue) {
-		// If the return value is a JSON object
 		responses = map[string]Response{
 			"200": {
 				Description: functionData.Description,
@@ -229,14 +228,16 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 			},
 		}
 	} else {
-		// If the return value is a string, number, or bool
+		fmt.Println("Return Data", functionData.ReturnValue)
 		responses = map[string]Response{
 			"200": {
 				Description: functionData.Description,
 				Content: map[string]MediaType{
-					"application/json": {Schema: Schema{Type: functionData.ReturnValue}}, // Example for a string response, modify as needed
-					// For number: Schema{Type: "number"}
-					// For bool: Schema{Type: "boolean"}
+					"text/plain": {
+						Schema: Schema{
+							Type: strings.ReplaceAll(strings.ReplaceAll(functionData.ReturnValue, "'", ""), `"`, ""),
+						},
+					},
 				},
 			},
 		}
@@ -248,9 +249,20 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 			Title:       functionData.Name,
 			Version:     "1.0.0",
 			Description: functionData.Description,
+			Contact: Contact{
+				Name: "Developer",
+			},
+			License: License{
+				Name: "MIT",
+				URL:  "https://opensource.org/license/mit",
+			},
 		},
 		Servers: []Server{
-			{},
+			{
+				// URL:         fmt.Sprintf("http://%s.default:8080", functionData.Name),
+				URL:         "http://localhost:8080", // TODO: Make this dynamic based on the environment
+				Description: "Service url inside the Kubernetes Cluster",
+			},
 		},
 		Paths: map[string]Path{
 			"/": {
@@ -263,9 +275,10 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 			},
 		},
 	}
+
 	openAPISpecBytes, err := json.Marshal(openAPISpec)
 	if err != nil {
-		fmt.Println("Error marshalling OpenAPI Specification JSON: ", err.Error())
+		return "", fmt.Errorf("error marshalling OpenAPI Specification JSON: %v", err)
 	}
 
 	return string(base64.StdEncoding.EncodeToString(openAPISpecBytes)), nil
@@ -273,14 +286,14 @@ func CreateOpenAPISpec(functionData OpenAPISpecData) (string, error) {
 
 func generateSchema(dataString string) Schema {
 	schema := Schema{
-		Properties: make(map[string]Schema), // Initialize Properties map
+		Properties: make(map[string]Schema),
 	}
 
 	if utils.IsJSONObject(dataString) {
 		dataMap, err := utils.JsonToMap(dataString)
 		if err != nil {
 			fmt.Println("error converting Json string to Map", err.Error())
-			return schema // Return empty schema on error
+			return schema
 		}
 
 		for key, inputType := range dataMap {
@@ -294,7 +307,6 @@ func generateSchema(dataString string) Schema {
 			if strType != "object" {
 				schema.Properties[key] = Schema{Type: strType}
 			} else {
-				// Recursively handle object type
 				subSchema := generateSchema(inputTypeStr)
 				schema.Properties[key] = subSchema
 			}
@@ -303,7 +315,7 @@ func generateSchema(dataString string) Schema {
 		strType, err := isValidOpenAPIType(dataString)
 		if err != nil {
 			fmt.Println("error checking open api type")
-			return schema // Return empty schema on error
+			return schema
 		}
 
 		schema.Type = strType

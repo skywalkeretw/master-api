@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -49,7 +50,7 @@ func GenerateTempFolder() (string, error) {
 	randomFolderName := fmt.Sprintf("gen_code_%s", uuid.New())
 
 	// Create the full path for the temporary folder
-	tempFolderPath := filepath.Join("generate", "output", randomFolderName)
+	tempFolderPath := filepath.Join("/generate", "output", randomFolderName)
 
 	// Create missing folders if specified in the path
 	if err := os.MkdirAll(filepath.Dir(tempFolderPath), os.ModePerm); err != nil {
@@ -188,4 +189,91 @@ func GetEnvInt(key string, defaultValue int) int {
 	}
 
 	return value
+}
+
+func StringToBool(str string) bool {
+	switch strings.ToLower(str) {
+	case "true", "t", "yes", "y", "1":
+		return true
+	case "false", "f", "no", "n", "0":
+		return false
+	default:
+		return false
+	}
+}
+
+// Custom validation function for allowed languages
+func ValidateAllowedLanguages(language string) bool {
+	allowedLanguages := []string{"golang", "python", "javascript"}
+	for _, allowed := range allowedLanguages {
+		if language == allowed {
+			return true
+		}
+	}
+	return false
+}
+
+func WriteFile(filename string, data []byte) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ReplacePlaceholder(filePath, placeholder, replacement string) error {
+	// Read the file content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Perform replacement
+	replacedContent := bytes.ReplaceAll(content, []byte(placeholder), []byte(replacement))
+
+	// Write the modified content back to the file
+	err = os.WriteFile(filePath, replacedContent, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CopyFileToFolder(sourceFile, destinationFolder string) error {
+	// Open the source file
+	src, err := os.Open(sourceFile)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	// Create the destination folder if it doesn't exist
+	if err := os.MkdirAll(destinationFolder, 0755); err != nil {
+		return err
+	}
+
+	// Get the filename from the source file path
+	_, filename := filepath.Split(sourceFile)
+
+	// Create the destination file
+	dstPath := filepath.Join(destinationFolder, filename)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	// Copy the content from source to destination
+	if _, err := io.Copy(dst, src); err != nil {
+		return err
+	}
+
+	return nil
 }

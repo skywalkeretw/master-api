@@ -1,14 +1,17 @@
-package kubernets
+package kubernetes
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -43,9 +46,9 @@ func init() {
 }
 
 // GetKubernetesPods retrieves a list of all pods in the Kubernetes cluster
-func GetKubernetesPods() ([]corev1.Pod, error) {
+func GetKubernetesPods(namespace string) ([]corev1.Pod, error) {
 
-	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +58,9 @@ func GetKubernetesPods() ([]corev1.Pod, error) {
 
 // GetKubernetesDeployments retrieves a list of all deployments in the Kubernetes cluster
 func GetKubernetesDeployments(namespace string) ([]appsv1.Deployment, error) {
+	// Create ListOptions with label selector
+
+	// Fetch deployments filtered by label selector
 	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -73,8 +79,44 @@ func GetKubernetesDeployment(name, namespace string) (*appsv1.Deployment, error)
 	return deployment, nil
 }
 
+func GetOrCreateNamespace(namespace string) error {
+	var err error
+	// Check if the namespace exists
+	_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err == nil {
+		// Namespace exists, no need to create
+		fmt.Printf("Namespace %s already exists\n", namespace)
+		return nil
+	}
+
+	// If the error is not nil, it means something went wrong during the get operation
+	// Create the namespace since it doesn't exist
+	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Namespace %s created\n", namespace)
+	return nil
+}
+
+type FunctionModes struct {
+	HTTPSync       bool `json:"httpsync"`
+	HTTPAsync      bool `json:"httpasync"`
+	MessagingSync  bool `json:"messagingsync"`
+	MessagingAsync bool `json:"messagingasync"`
+}
+
 // CreateKubernetesDeployment creates a new deployment in the Kubernetes cluster.
-func CreateKubernetesDeployment(name, namespace string, replicas int, template corev1.PodTemplateSpec) error {
+func CreateKubernetesDeployment(name, namespace, imageName, description, tags string, modes FunctionModes, replicas int) error {
+
+	// err := GetOrCreateNamespace(namespace)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create or retrieve namespace: %v", err)
+	// }
+	labels := map[string]string{
+		"run":  name,
+		"type": "function",
+	}
 	// Define the deployment object
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -84,22 +126,87 @@ func CreateKubernetesDeployment(name, namespace string, replicas int, template c
 		Spec: appsv1.DeploymentSpec{
 			Replicas: utils.Int32Ptr(replicas), // Set the number of replicas as needed
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": name},
+				MatchLabels: labels,
 			},
-			Template: template,
-			// Template: appsv1.PodTemplateSpec{
-			// 	ObjectMeta: metav1.ObjectMeta{
-			// 		Labels: map[string]string{"app": name},
-			// 	},
-			// 	Spec: appsv1.PodSpec{
-			// 		Containers: []appsv1.Container{
-			// 			{
-			// 				Name:  "example-container",
-			// 				Image: "nginx:latest", // Set the container image as needed
-			// 			},
-			// 		},
-			// 	},
-			// },
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{{
+						Name:            name,
+						Image:           imageName,
+						ImagePullPolicy: v1.PullAlways,
+						Ports: []v1.ContainerPort{{
+							Name:          "http",
+							Protocol:      v1.ProtocolTCP,
+							ContainerPort: 8080, // Specify the container port to open
+						}},
+						Env: []v1.EnvVar{
+							{
+								Name:  "DESCRIPTION",
+								Value: description,
+							},
+							{
+								Name:  "TAGS",
+								Value: tags,
+							},
+							{
+								Name:  "HTTPSYNC",
+								Value: strconv.FormatBool(modes.HTTPSync),
+							},
+							{
+								Name:  "HTTPASYNC",
+								Value: strconv.FormatBool(modes.HTTPAsync),
+							},
+							{
+								Name:  "MESSAGINGSYNC",
+								Value: strconv.FormatBool(modes.MessagingSync),
+							},
+							{
+								Name:  "MESSAGINGASYNC",
+								Value: strconv.FormatBool(modes.MessagingAsync),
+							},
+							{
+								Name: "RABBITMQ_USERNAME",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "username",
+									},
+								},
+							},
+							{
+								Name: "RABBITMQ_PASSWORD",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "password",
+									},
+								},
+							},
+							{
+								Name: "RABBITMQ_HOST",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "host",
+									},
+								},
+							},
+							{
+								Name: "RABBITMQ_PORT",
+								ValueFrom: &v1.EnvVarSource{
+									SecretKeyRef: &v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{Name: "hello-world-default-user"},
+										Key:                  "port",
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
 		},
 	}
 
@@ -108,9 +215,10 @@ func CreateKubernetesDeployment(name, namespace string, replicas int, template c
 	if err != nil {
 		return fmt.Errorf("failed to create deployment: %v", err)
 	}
-
 	fmt.Printf("Deployment %s created successfully in namespace %s\n", name, namespace)
-	return nil
+
+	_, err = CreateKubernetesService(name, namespace)
+	return err
 }
 
 // DeleteKubernetesDeployment deletes a specific deployment in the Kubernetes cluster.
@@ -146,6 +254,46 @@ func UpdateKubernetesDeployment(name, namespace string, updateOptions metav1.Upd
 		return fmt.Errorf("update failed: %v", retryErr)
 	}
 	return nil
+}
+
+func CreateKubernetesService(name, namespace string) (*corev1.Service, error) {
+	// Define your service object
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			// Type: corev1.ServiceTypeClusterIP, // Specify the service type (e.g., ClusterIP, NodePort, LoadBalancer)
+			Type: corev1.ServiceTypeNodePort,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Port:       8080,                             // Specify the port number
+					TargetPort: intstr.IntOrString{IntVal: 8080}, // Specify the target port number
+					NodePort:   30950,                            // HARD Coded for one time use
+				},
+			},
+			Selector: map[string]string{
+				"run": name, // Specify the labels to match for selecting pods
+			},
+			// Add any additional specifications as needed
+		},
+	}
+
+	// Call the Kubernetes API to create the service
+	createdService, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for the service to be ready
+	// err = waitForServiceReady(namespace, name)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	return createdService, nil
 }
 
 // GetKubernetesServices retrieves a list of all services in the Kubernetes cluster within the specified namespace.

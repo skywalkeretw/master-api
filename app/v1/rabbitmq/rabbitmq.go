@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/skywalkeretw/master-api/app/utils"
+	"github.com/skywalkeretw/master-api/app/v1/kubernetes"
 )
 
 // import (
@@ -243,15 +244,17 @@ func (r RabbitMQDial) getUrl() string {
 }
 
 type FunctionBuildDeployData struct {
-	Name       string `json:"name" binding:"required"`
-	Language   string `json:"language" binding:"required"`
-	SourceCode string `json:"sourcecode" binding:"required"`
+	Name        string `json:"name" binding:"required"`
+	Language    string `json:"language" binding:"required"`
+	Description string `json:"description"`
+	SourceCode  string `json:"sourcecode" binding:"required"`
 	// InputParameters string                 `json:"inputparameters" binding:"required"`
 	// ReturnValue     string                 `json:"returnvalue" binding:"required"`
 	// FunctionModes function.FunctionModes `json:"functionmodes" binding:"required"`
-	FuncInput    string `json:"fucinput" binding:"required"`
-	OpenAPIJSON  string `json:"openapijson"`
-	AsyncAPIJSON string `json:"asyncapijson"`
+	FuncInput     string                   `json:"fucinput" binding:"required"`
+	OpenAPIJSON   string                   `json:"openapijson"`
+	AsyncAPIJSON  string                   `json:"asyncapijson"`
+	FunctionModes kubernetes.FunctionModes `json:"functionmodes" binding:"required"`
 }
 
 func RPCclient(data FunctionBuildDeployData) {
@@ -351,7 +354,15 @@ func RPCclient(data FunctionBuildDeployData) {
 			}
 			fmt.Println("recived data:")
 			fmt.Println(imageData)
-			// kubernets.CreateKubernetesDeployment("name", "default", 1, v1.PodTemplateSpec{
+			tagString := fmt.Sprintf("runtime=%s:version=v1.0.0", data.Language)
+			err = kubernetes.CreateKubernetesDeployment(data.Name, "default", imageData.ImageName, data.Description, tagString, data.FunctionModes, 1)
+
+			if err != nil {
+				fmt.Println("failed to deploy", err.Error())
+			} else {
+				fmt.Println("Function has been deployed")
+			}
+			// kubernetes.CreateKubernetesDeployment("name", "default", 1, v1.PodTemplateSpec{
 			// 	ObjectMeta: v1.PodTemplateSpec{},
 			// })
 			break

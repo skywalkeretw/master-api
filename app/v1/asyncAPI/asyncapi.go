@@ -4,29 +4,31 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/skywalkeretw/master-api/app/utils"
 )
 
 // AsyncAPI represents the AsyncAPI specification.
 type AsyncAPI struct {
-	Asyncapi           string                 `json:"asyncapi"`
-	Id                 string                 `json:"id,omitempty"` //"urn:example:com:smartylighting:streetlights:server"
-	Info               AsyncAPIInfo           `json:"info,omitempty"`
-	Servers            map[string]Server      `json:"servers,omitempty"`
-	DefaultContentType string                 `json:"defaultContentType,omitempty"`
-	Channels           map[string]Channel     `json:"channels"`
-	Components         Components             `json:"components,omitempty"`
-	Operation          map[string]Operation   `json:"operation,omitempty"`
-	ExternalDocs       ExternalDocs           `json:"externalDocs,omitempty"`
-	Tags               []Tag                  `json:"tags,omitempty"`
-	Extensions         map[string]interface{} `json:"x-extensions,omitempty"`
+	Asyncapi           string               `json:"asyncapi,omitempty"`
+	Id                 string               `json:"id,omitempty"` //"urn:example:com:smartylighting:streetlights:server"
+	Info               AsyncAPIInfo         `json:"info,omitempty"`
+	Servers            map[string]Server    `json:"servers,omitempty"`
+	DefaultContentType string               `json:"defaultContentType,omitempty"`
+	Channels           map[string]Channel   `json:"channels,omitempty"`
+	Components         Components           `json:"components,omitempty"`
+	Operations         map[string]Operation `json:"operations,omitempty"`
+	// ExternalDocs       ExternalDocs           `json:"externalDocs,omitempty"`
+	Tags       []Tag                  `json:"tags,omitempty"`
+	Extensions map[string]interface{} `json:"x-extensions,omitempty"`
 }
 
 // AsyncAPIInfo represents the metadata information in the AsyncAPI specification.
 type AsyncAPIInfo struct {
-	Title          string  `json:"title"`
-	Version        string  `json:"version"`
+	Title          string  `json:"title,omitempty"`
+	Version        string  `json:"version,omitempty"`
 	Description    string  `json:"description,omitempty"`
 	Contact        Contact `json:"contact,omitempty"`
 	License        License `json:"license,omitempty"`
@@ -35,8 +37,8 @@ type AsyncAPIInfo struct {
 
 // Server represents a server in the AsyncAPI specification.
 type Server struct {
-	Host        string                    `json:"host"`
-	Protocol    string                    `json:"protocol"`
+	Host        string                    `json:"host,omitempty"`
+	Protocol    string                    `json:"protocol,omitempty"`
 	Description string                    `json:"description,omitempty"`
 	Variables   map[string]ServerVariable `json:"variables,omitempty"`
 }
@@ -50,16 +52,16 @@ type ServerVariable struct {
 
 // Channel represents a channel in the AsyncAPI specification.
 type Channel struct {
-	Address      string          `json:"address,omitempty"`
-	Message      map[string]Ref  `json:"messages,omitempty"`
-	Title        string          `json:"title,omitempty"`
-	Summary      string          `json:"summary,omitempty"`
-	Description  string          `json:"description,omitempty"`
-	Servers      []Ref           `json:"servers,omitempty"`
-	Parameters   map[string]Ref  `json:"parameters,omitempty"`
-	Tags         []Tag           `json:"tags,omitempty"`
-	ExternalDocs ExternalDocs    `json:"externalDocs,omitempty"`
-	Bindings     ChannelBindings `json:"bindings,omitempty"`
+	Address     string         `json:"address,omitempty"`
+	Message     map[string]Ref `json:"messages,omitempty"`
+	Title       string         `json:"title,omitempty"`
+	Summary     string         `json:"summary,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Servers     []Ref          `json:"servers,omitempty"`
+	Parameters  map[string]Ref `json:"parameters,omitempty"`
+	Tags        []Tag          `json:"tags,omitempty"`
+	// ExternalDocs ExternalDocs    `json:"externalDocs,omitempty"`
+	Bindings ChannelBindings `json:"bindings,omitempty"`
 }
 
 type OperationBindings struct {
@@ -71,16 +73,17 @@ type ChannelBindings struct {
 }
 
 type AMQPBinding struct {
-	Is    string `json:"is,omitempty"`
-	Queue Queue  `json:"queue,omitempty"`
+	Is             string `json:"is,omitempty"` //"queue" or "exchange"
+	Queue          Queue  `json:"queue,omitempty"`
+	BindingVersion string `json:"bindingVersion,omitempty"`
 }
 
 type Queue struct {
 	Name       string `json:"name,omitempty"`
-	Durable    bool   `json:"durable,omitempty"`
-	Exclusive  bool   `json:"exclusive,omitempty"`
-	AutoDelete bool   `json:"auto_delete,omitempty"`
-	VHost      string `json:"vHost,omitempty"`
+	Durable    bool   `json:"durable"`
+	Exclusive  bool   `json:"exclusive"`
+	AutoDelete bool   `json:"autoDelete"`
+	VHost      string `json:"vhost,omitempty"`
 }
 
 // AsyncAPIComponents represents the components section in the AsyncAPI specification.
@@ -100,27 +103,26 @@ type SchemaObject struct {
 
 // Tag represents a tag in the AsyncAPI specification.
 type Tag struct {
-	Name         string       `json:"name,omitempty"`
-	Description  string       `json:"description,omitempty"`
-	ExternalDocs ExternalDocs `json:"externalDocs,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	// ExternalDocs ExternalDocs `json:"externalDocs,omitempty"`
 }
 
 // Operation represents an operation in the AsyncAPI specification.
 type Operation struct {
-	Action      string            `json:"action,omitempty"` // "send" | "receive"
-	Channel     Ref               `json:"channel,omitempty"`
-	Title       string            `json:"title,omitempty"`
-	Summary     string            `json:"summary,omitempty"`
-	Description string            `json:"description,omitempty"`
-	Bindings    OperationBindings `json:"bindings,omitempty"`
-	Message     map[string]Ref    `json:"messages,omitempty"`
-	Reply       Reply             `json:"reply,omitempty"`
+	Action      string             `json:"action,omitempty"` // "send" | "receive"
+	Channel     Ref                `json:"channel,omitempty"`
+	Title       string             `json:"title,omitempty"`
+	Summary     string             `json:"summary,omitempty"`
+	Description string             `json:"description,omitempty"`
+	Bindings    *OperationBindings `json:"bindings,omitempty"`
+	Message     map[string]Ref     `json:"messages,omitempty"`
+	Reply       *Reply             `json:"reply,omitempty"`
 }
 
 type Reply struct {
-	Address Address        `json:"addressee,omitempty"`
-	Channel Ref            `json:"channel,omitempty"`
-	Message map[string]Ref `json:"messages,omitempty"`
+	Address Address `json:"addressee,omitempty"`
+	Channel Ref     `json:"channel,omitempty"`
 }
 
 type Address struct {
@@ -131,7 +133,7 @@ type Address struct {
 type Message struct {
 	Headers       map[string]interface{} `json:"headers,omitempty"`
 	Payload       Payload                `json:"payload,omitempty"`
-	CorrelationId CorrelationId          `json:"correlationId,omitempty"`
+	CorrelationId *CorrelationId         `json:"correlationId,omitempty"`
 	ContentType   string                 `json:"contentType,omitempty"`
 	Name          string                 `json:"name,omitempty"`
 	Summary       string                 `json:"summary,omitempty"`
@@ -167,7 +169,7 @@ type Contact struct {
 
 // License represents license information in the AsyncAPI specification.
 type License struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 	URL  string `json:"url,omitempty"`
 }
 
@@ -179,7 +181,7 @@ type AsyncAPISpecData struct {
 }
 
 type Ref struct {
-	Ref string `json:"$ref"`
+	Ref string `json:"$ref,omitempty"`
 }
 
 // getStringFromInterface checks if the interface contains a string of a valid OpenAPI type and returns it
@@ -225,9 +227,10 @@ func generateProperties(dataString string) map[string]Property {
 
 			if strType != "object" {
 				properties[key] = Property{Type: strType}
-			} else {
-				// Recursively handle object type
 			}
+			// else {
+			// 	// Recursively handle object type
+			// }
 		}
 	}
 	return properties
@@ -257,6 +260,9 @@ func CreateAsyncAPISpec(functionData AsyncAPISpecData) (string, error) {
 		}
 
 	} else {
+		returnPayload = Payload{
+			Type: strings.ReplaceAll(strings.ReplaceAll(functionData.ReturnValue, "'", ""), `"`, ""),
+		}
 		// // If the return value is a string, number, or bool
 		// responses = map[string]Response{
 		// 	"200": {
@@ -270,73 +276,111 @@ func CreateAsyncAPISpec(functionData AsyncAPISpecData) (string, error) {
 		// }
 	}
 
+	serverName := "cluster-local"
+	serverRef := fmt.Sprintf("#/servers/%s", serverName)
+	serverHost := fmt.Sprintf("%s:%d", utils.GetEnvSting("RABBITMQ_HOST", "localhost"), utils.GetEnvInt("RABBITMQ_PORT", 5672))
+
+	inputChannelName := fmt.Sprintf("input-func-%s", functionData.Name)
+	inputChannelRef := fmt.Sprintf("#/channels/%s", inputChannelName)
+	inputMessageName := inputChannelName
+	inputMessagRef := fmt.Sprintf("#/components/messages/%s", inputMessageName)
+
+	returnChanelName := fmt.Sprintf("return-func-%s", functionData.Name)
+	returnChanelRef := fmt.Sprintf("#/channels/%s", returnChanelName)
+	returnMessageName := returnChanelName
+	returnMessageRef := fmt.Sprintf("#/components/messages/%s", returnMessageName)
+
+	receiveOperation := fmt.Sprintf("receive-%s", functionData.Name)
+	sendOperation := fmt.Sprintf("send-%s", functionData.Name)
+
 	asyncAPISpec := AsyncAPI{
-		Asyncapi: "3.0.0",
+		Asyncapi: "2.6.0",
 		Info: AsyncAPIInfo{
 			Title:       functionData.Name,
 			Version:     "1.0.0",
 			Description: functionData.Description,
+			Contact: Contact{
+				Name: "Developer",
+			},
+			License: License{
+				Name: "MIT",
+				URL:  "https://opensource.org/license/mit",
+			},
 		},
 		DefaultContentType: "application/json",
 		Servers: map[string]Server{
-			"local": {
-				Host:     fmt.Sprintf("%s:%d", utils.GetEnvSting("RABBITMQ_HOST", "localhost"), utils.GetEnvInt("RABBITMQ_PORT", 5672)),
+			serverName: {
+				Host:     serverHost,
 				Protocol: "amqp",
 			},
 		},
 		Channels: map[string]Channel{
-			fmt.Sprintf("input-func-%s", functionData.Name): {
+			inputChannelName: {
 				Address:     "input",
 				Title:       "Input",
 				Description: "The channel for sending input parameters to a serverless function.",
-				Message:     map[string]Ref{"inputParameter": {Ref: "#/components/messages/InputParameter"}},
-				Parameters:  map[string]Ref{"": {Ref: ""}},
-				Servers:     []Ref{{Ref: "#/servers/local"}},
+				Message:     map[string]Ref{inputMessageName: {Ref: inputMessagRef}},
+				// Parameters:  map[string]Ref{"": {Ref: ""}},
+				Servers: []Ref{{Ref: serverRef}},
 				Bindings: ChannelBindings{
 					AMQP: AMQPBinding{
 						Is: "queue",
 						Queue: Queue{
-							Exclusive: false,
+							Name:       inputChannelName,
+							Durable:    true,
+							Exclusive:  false,
+							AutoDelete: false,
 						},
+						BindingVersion: "0.3.0",
 					},
 				},
 			},
-			fmt.Sprintf("return-func-%s", functionData.Name): {
+			returnChanelName: {
 				Address:     fmt.Sprintf("%s.%s", functionData.Name, "return"),
 				Title:       "Return",
 				Description: "The channel for sending the return data to the client from a serverless function.",
-				Message:     map[string]Ref{"returnData": {Ref: "#/components/messages/ReturnData"}},
-				Parameters:  map[string]Ref{"": {Ref: ""}},
-				Servers:     []Ref{{Ref: "#/servers/local"}},
+				Message:     map[string]Ref{"returnData": {Ref: returnMessageRef}},
+				// Parameters:  map[string]Ref{"": {Ref: ""}},
+				Servers: []Ref{{Ref: serverRef}},
 				Bindings: ChannelBindings{
 					AMQP: AMQPBinding{
 						Is: "queue",
 						Queue: Queue{
-							Exclusive: false,
+							Name:       returnChanelName,
+							Durable:    true,
+							Exclusive:  false,
+							AutoDelete: false,
 						},
+						BindingVersion: "0.3.0",
 					},
 				},
 			},
 		},
-		Operation: map[string]Operation{
-			fmt.Sprintf("receive_%s", functionData.Name): {
+		Operations: map[string]Operation{
+			receiveOperation: {
 				Action:  "receive",
-				Channel: Ref{Ref: fmt.Sprintf("#/channels/input-func-%s", functionData.Name)},
+				Channel: Ref{Ref: inputChannelRef},
+				// Bindings: OperationBindings{},
+				// Reply:    Reply{},
 			},
-			fmt.Sprintf("send_%s", functionData.Name): {
+			sendOperation: {
 				Action:  "send",
-				Channel: Ref{Ref: fmt.Sprintf("#/channels/return-func-%s", functionData.Name)},
+				Channel: Ref{Ref: returnChanelRef},
+				// Bindings: OperationBindings{},
+				// Reply:    Reply{},
 			},
 		},
 		Components: Components{
 			Messages: map[string]Message{
-				"parameterMessage": {
-					Name:    "input",
+				inputMessageName: {
+					Name:    inputMessageName,
 					Payload: inputPayload,
+					// CorrelationId: CorrelationId{},
 				},
-				"returnMessage": {
-					Name:    "returnMessage",
+				returnMessageName: {
+					Name:    returnMessageName,
 					Payload: returnPayload,
+					// CorrelationId: CorrelationId{},
 				},
 			},
 		},
@@ -347,4 +391,68 @@ func CreateAsyncAPISpec(functionData AsyncAPISpecData) (string, error) {
 		return "", fmt.Errorf("error marshalling AsyncAPI Specification JSON: %v", err.Error())
 	}
 	return string(base64.StdEncoding.EncodeToString(asyncAPISpecBytes)), nil
+}
+
+func GenerateClient(asyncapiSpecPath, name, language string) (string, error) {
+	// utils.Contains(clients, language)
+	clientCodeTmpDirPath, err := utils.GenerateTempFolder()
+	if err != nil {
+		return "", err
+	}
+
+	// dont use generator as
+
+	// var generator string
+	// switch language {
+	// case "go", "golang":
+	// 	generator = "@asyncapi/go-watermill-template"
+	// case "python":
+	// 	generator = "@asyncapi/python-paho-template"
+	// case "javascript":
+	// 	generator = "@asyncapi/nodejs-template"
+	// }
+	// npm install -g @asyncapi/cli
+	// asyncapi generate fromTemplate https://bit.ly/asyncapi @asyncapi/nodejs-template  -o example
+	// _, err = utils.RunShellCommand("asyncapi", "generate", "fromTemplate", asyncapiSpecPath, generator, "-o", clientCodeTmpDirPath)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	switch language {
+	case "python":
+		err = utils.CopyFileToFolder("/templates/python/msgfunctioncall.py", clientCodeTmpDirPath)
+		if err != nil {
+			return "", err
+		}
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "msgfunctioncall.py"), "{{FUNCTION_NAME}}", name)
+		if err != nil {
+			return "", err
+		}
+
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "msgfunctioncall.py"), "{{RABBITMQ_USERNAME}}", utils.GetEnvSting("RABBITMQ_USERNAME", "guest"))
+		if err != nil {
+			return "", err
+		}
+		err = utils.ReplacePlaceholder(filepath.Join(clientCodeTmpDirPath, "msgfunctioncall.py"), "{{RABBITMQ_PASSWORD}}", utils.GetEnvSting("RABBITMQ_PASSWORD", "guest"))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	zipPath := fmt.Sprintf("/generate/%s-%s.zip", name, language)
+	err = utils.ZipFolder(clientCodeTmpDirPath, zipPath)
+	if err != nil {
+		return "", err
+	}
+	// err = utils.DeleteFolder(clientCodeTmpDirPath)
+	// if err != nil {
+	// 	fmt.Println("failed to delete folder")
+	// 	// return "", err
+	// }
+	// err = os.Remove(swaggerSpecPath)
+	// if err != nil {
+	// 	fmt.Println("failed to delete swagger json")
+	// 	// return "", err
+	// }
+	return zipPath, nil
 }

@@ -55,7 +55,7 @@ func GenerateClientHandler(ctx *gin.Context) {
 	oasFilePath := utils.TransformTitle2FilenamePath("generate", "swaggerjson", oas.Info.Title)
 	utils.CreateJSONFile(oasFilePath, oas)
 
-	clientZipPath, err := GenerateClient(oasFilePath, "javascript")
+	clientZipPath, err := GenerateClient(oasFilePath, "name", "javascript")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generete Server Stub"})
 		return
